@@ -2,8 +2,8 @@
 ********************************************************************************
 $ontext
 The Dispatch and Investment Evaluation Tool with Endogenous Renewables (DIETER).
-Version 1.1.0, February 2016.
-Written by Alexander Zerrahn and Wolf-Peter Schill. Moritz Niemeyer contributed to electric vehicle modeling.
+Version 1.2.0, February 2017.
+Written by Alexander Zerrahn and Wolf-Peter Schill.
 This work is licensed under the MIT License (MIT).
 For more information on this license, visit http://opensource.org/licenses/mit-license.php.
 Whenever you use this code, please refer to http://www.diw.de/dieter.
@@ -64,20 +64,14 @@ m_res_e(res)             Investment: maximum installable energy in TWh per a
 
 
 ***** Time Data *****
-
 d_y(year,h)              Demand hour h for cost minimization for different years
 d(h)                     Demand hour h for cost minimization
-*price_data(h)            Spot market prices 2012
 phi_res_y(year,res,h)    Renewables availability technology res in hour h for different years
 phi_res(res,h)           Renewables availability technology res in hour h
 phi_ror(h)               Run-of-river availability in hour h
 n_ev_p(ev,h)             Power rating of the charging connection in MW in hour h (0 when car is in use or parked without grid connection)
 ev_ed(ev,h)              Electricity demand for mobility vehicle profile ev in hour h in MW
-
-elasticity_upload        Upload parameter for demand elasticity
-elasticity               Demand elasticity
-*alpha(h)                 Reservation price hour h for elastic demand
-*beta(h)                  Slope on linear demand curve hour h
+ev_ged_exog(ev,h)        Electricity demand for mobility in case of uncontrolled charging vehicle profile ev in hour h in MW
 
 
 ***** Storage *****
@@ -100,6 +94,7 @@ inv_interest_sto(sto)            Investment costs for storage: Interest rate
 m_sto_e(sto)                     Investment into storage: maximum installable energy in MWh
 m_sto_p(sto)                     Investment into storage: maximum installable capacity in MW
 
+
 ***** Electric vehicles *****
 c_m_ev(ev)               Marginal costs of discharging V2G
 pen_phevfuel             Penalty for non-electric PHEV operation mode
@@ -108,8 +103,10 @@ eta_ev_out(ev)           Electric vehicle efficiency of discharging (V2G)
 phi_ev_ini(ev)           Electric vehicle charging level in initial period
 
 n_ev_e(ev)               Electric vehicle battery capacity in MWh
-ev_quant(ev)             Quantity of electric vehicles per load profile
+ev_quant                 Overall number of electirc vehicles
+phi_ev(ev)               Share of electric vehicles per load profile in actual scenario
 ev_phev(ev)              Defines whether an electric vehicle is a PHEV REEV (1 if yes 0 otherwise)
+
 
 ***** DSM *****
 
@@ -138,17 +135,24 @@ m_dsm_cu(dsm_curt)                       DSM: Maximum installable capacity load 
 m_dsm_shift(dsm_shift)                   DSM: Maximum installable capacity load shifting
 
 
-
 ***** Reserves *****
-
 phi_reserves_share(reserves)             Shares of SRL and MRL up and down
 reserves_intercept(reserves)
 reserves_slope(reserves,res)
+reserves_reaction(reserves)              Activation reaction time for reserves qualities in minutes
 phi_reserves_call_y(year,reserves,h)     Hourly share of reserve provision that is actually activated
 phi_reserves_call(reserves,h)            Hourly share of reserve provision that is actually activated
-phi_reserves_pr
-;
+phi_reserves_pr                          Primary reserves demand as fraction of sum of all secondary and tertiary reserves demand
 
+
+***** Prosumage *****
+phi_pro_load                             Share of prosumagers among total load
+phi_pro_self                             Minimum self-generation shares for prosumagers
+m_res_pro(res)                           Maximum installable: renewables capacity
+m_sto_pro_e(sto)                         Maximum installable: storage energy
+m_sto_pro_p(sto)                         Maximum installable: storage capacity
+phi_sto_pro_ini                          Prosumagers' initial storage loading
+;
 
 ********************************************************************************
 
@@ -170,7 +174,6 @@ par=grad_per_min         rng=Conventionals!c125:d132     rdim=1 cdim=0
 
 par=c_cu                 rng=Renewables!c4:d6            rdim=1 cdim=0
 par=c_fix_res            rng=Renewables!c9:d11           rdim=1 cdim=0
-par=phi_min_res          rng=Renewables!d46:d46          rdim=0 cdim=0
 par=c_inv_overnight_res  rng=Renewables!c15:d17          rdim=1 cdim=0
 par=inv_lifetime_res     rng=Renewables!c20:d22          rdim=1 cdim=0
 par=inv_recovery_res     rng=Renewables!c25:d27          rdim=1 cdim=0
@@ -181,14 +184,13 @@ par=m_res_e              rng=Renewables!c40:d42          rdim=1 cdim=0
 par=con_fuelprice        rng=Fuel_CO2!a4:b12             rdim=1 cdim=0
 par=con_CO2price         rng=Fuel_CO2!b18:b18            rdim=0 cdim=0
 
-*par=elasticity_upload    rng=Time_Data!b34:c34           rdim=1 cdim=0
 par=d_y                  rng=Time_Data!c48:lya52         rdim=1 cdim=1
-*par=price_data           rng=Time_Data!d12:lya13         rdim=0 cdim=1
 par=phi_res_y            rng=Time_Data!b55:lya67         rdim=2 cdim=1
 par=phi_ror              rng=Time_Data!d30:lya31         rdim=0 cdim=1
 
 par=n_ev_p               rng=Time_Data!c75:lya103        rdim=1 cdim=1
 par=ev_ed                rng=Time_Data!c109:lya137       rdim=1 cdim=1
+par=ev_ged_exog          rng=Time_Data!c144:lya172       rdim=1 cdim=1
 
 par=c_m_dsm_shift                rng=DSM!c10:d14         rdim=1 cdim=0
 par=c_fix_dsm_shift              rng=DSM!c20:d24         rdim=1 cdim=0
@@ -228,29 +230,35 @@ par=eta_ev_in            rng=EV!c37:d64          rdim=1 cdim=0
 par=eta_ev_out           rng=EV!c67:d94          rdim=1 cdim=0
 par=phi_ev_ini           rng=EV!c97:d124         rdim=1 cdim=0
 par=n_ev_e               rng=EV!c127:d154        rdim=1 cdim=0
-par=ev_quant             rng=EV!c157:d184        rdim=1 cdim=0
+par=phi_ev               rng=EV!c157:d184        rdim=1 cdim=0
 par=ev_phev              rng=EV!c187:d214        rdim=1 cdim=0
 
 par=phi_reserves_share           rng=Reserves!e13:f16    rdim=1 cdim=0
 par=reserves_intercept           rng=Reserves!e2:f5      rdim=1 cdim=0
 par=reserves_slope               rng=Reserves!d6:g10     rdim=1 cdim=1
-*par=phi_reserves_call            rng=Reserves!c36:lya42  rdim=1 cdim=1
+par=reserves_reaction            rng=Reserves!d79:e85    rdim=1 cdim=0
 par=phi_reserves_call_y          rng=Reserves!b49:lya73  rdim=2 cdim=1
 par=phi_reserves_pr              rng=Reserves!d87:d87    rdim=0 cdim=0
+
+par=m_res_pro          rng=Prosumage!c5:d7     rdim=1 cdim=0
+par=m_sto_pro_e        rng=Prosumage!c10:d16   rdim=1 cdim=0
+par=m_sto_pro_p        rng=Prosumage!c19:d25   rdim=1 cdim=0
+par=phi_sto_pro_ini    rng=Prosumage!c28:d34   rdim=1 cdim=0
 $offecho
 
 %skip_Excel%$call "gdxxrw Data_Input.xlsx @temp.tmp o=Data_input";
 
 $GDXin Data_input.gdx
-$load d_y phi_ror phi_res_y n_ev_p ev_ed
+$load d_y phi_ror phi_res_y n_ev_p ev_ed ev_ged_exog
 $load eta_con carbon_content c_up c_do c_fix_con c_var_con c_inv_overnight_con inv_lifetime_con inv_recovery_con inv_interest_con m_con m_con_e grad_per_min
 $load con_fuelprice con_CO2price
-$load c_cu c_fix_res phi_min_res c_inv_overnight_res inv_lifetime_res inv_recovery_res inv_interest_res m_res m_res_e
+$load c_cu c_fix_res c_inv_overnight_res inv_lifetime_res inv_recovery_res inv_interest_res m_res m_res_e
 $load c_m_sto eta_sto c_fix_sto c_inv_overnight_sto_e c_inv_overnight_sto_p inv_lifetime_sto inv_interest_sto m_sto_e m_sto_p phi_sto_ini etop_max
 $load c_m_dsm_shift c_fix_dsm_shift c_inv_overnight_dsm_shift inv_recovery_dsm_shift inv_interest_dsm_shift m_dsm_shift t_dur_dsm_shift eta_dsm_shift t_off_dsm_shift
 $load c_m_dsm_cu c_fix_dsm_cu c_inv_overnight_dsm_cu inv_recovery_dsm_cu inv_interest_dsm_cu m_dsm_cu t_dur_dsm_cu t_off_dsm_cu
-$load c_m_ev eta_ev_in eta_ev_out pen_phevfuel phi_ev_ini n_ev_e ev_quant ev_phev
-$load phi_reserves_share reserves_intercept reserves_slope phi_reserves_call_y phi_reserves_pr
+$load c_m_ev eta_ev_in eta_ev_out pen_phevfuel phi_ev_ini n_ev_e phi_ev ev_phev
+$load phi_reserves_share reserves_intercept reserves_slope reserves_reaction phi_reserves_call_y phi_reserves_pr
+$load m_res_pro m_sto_pro_e m_sto_pro_p phi_sto_pro_ini
 ;
 
 
