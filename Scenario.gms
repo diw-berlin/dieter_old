@@ -2,7 +2,7 @@
 ********************************************************************************
 $ontext
 The Dispatch and Investment Evaluation Tool with Endogenous Renewables (DIETER).
-Version 1.2.0, February 2017.
+Version 1.#, April 2018.
 Written by Alexander Zerrahn and Wolf-Peter Schill.
 This work is licensed under the MIT License (MIT).
 For more information on this license, visit http://opensource.org/licenses/mit-license.php.
@@ -11,68 +11,143 @@ We are happy to receive feedback under azerrahn@diw.de and wschill@diw.de.
 $offtext
 ********************************************************************************
 
+
+
+
 *****************************************
 **** Scenario file                   ****
 ****                                 ****
 *****************************************
 
-** Conventionals in scenario 2035 **
-N_CON.fx('bio') = 8400;
-N_CON.fx('lig') = 9100;
-N_CON.fx('hc') = 11000;
-N_CON.fx('CCGT') = 40700/2 ;
-N_CON.fx('OCGT_eff') = 0;
-N_CON.fx('OCGT_ineff') = 40700/2 ;
-N_STO_P.lo('Sto5') = 6400 ;
-N_STO_E.lo('Sto5') = 6400*7 ;
-
-lev_N_CON(scen,'bio') = 8400;
-lev_N_CON(scen,'lig') = 9100;
-lev_N_CON(scen,'hc') = 11000;
-lev_N_CON(scen,'CCGT') = 40700/2 ;
-lev_N_CON(scen,'OCGT_eff') = 0;
-lev_N_CON(scen,'OCGT_ineff') = 40700/2 ;
-
-
 Parameter
-phi_pro_pv
+m_exog_p(n,tech)
+m_exog_sto_e(n,sto)
+m_exog_sto_p(n,sto)
+m_exog_rsvr_p(n,rsvr)
+m_exog_ntc(l)
 ;
 
-phi_pro_pv = 0.25 ;
-
-** Renewables in scenario 2035 **
-N_RES.fx('Wind_on') = 88800 ;
-N_RES.fx('Wind_off') = 18500 ;
-N_RES.fx('Solar') = 59900*(1-phi_pro_pv) ;
-
-lev_N_RES(scen,'Wind_on') = 88800 ;
-lev_N_RES(scen,'Wind_off') = 18500 ;
-lev_N_RES(scen,'Solar') = 59900*(1-phi_pro_pv) ;
-
-%prosumage%$ontext
-N_RES_PRO.fx('Wind_on') = 0 ;
-N_RES_PRO.fx('Wind_off') = 0 ;
-N_RES_PRO.fx('Solar') = 59900*phi_pro_pv ;
-
-lev_N_RES_PRO(scen,'Wind_on') = 0 ;
-lev_N_RES_PRO(scen,'Wind_off') = 0 ;
-lev_N_RES_PRO(scen,'Solar') = 59900*phi_pro_pv ;
-
-phi_pro_load = 0.95 * N_RES_PRO.l('Solar')*sum(h,phi_res('Solar',h))/sum(h,d_y(%base_year%,h)) ;
+m_exog_p(n,tech) = technology_data(n,tech,'fixed_capacities') ;
+m_exog_sto_e(n,sto) = storage_data(n,sto,'fixed_capacities_energy');
+m_exog_sto_p(n,sto) = storage_data(n,sto,'fixed_capacities_power');
+m_exog_rsvr_p(n,rsvr) = reservoir_data(n,rsvr,'fixed_capacities_power');
+m_exog_ntc(l) = topology_data(l,'fixed_capacities_ntc') ;
 
 
-** Prosumage cases **
-
-*STO_IN_PRO2M.fx(res,sto,h) = 0 ;
-*STO_OUT_PRO2M.fx(sto,h) = 0 ;
-
-*STO_IN_M2PRO.fx(sto,h) = 0 ;
-*STO_OUT_M2PRO.fx(sto,h) = 0 ;
-
-*STO_IN_M2M.fx(sto,h) = 0 ;
-*STO_OUT_M2M.fx(sto,h) = 0 ;
-
+*** Dispatch model
 $ontext
+N_TECH.lo(n,tech) = m_exog_p(n,tech) ;
+N_STO_P.lo(n,sto) = m_exog_sto_p(n,sto) ;
+N_STO_E.lo(n,sto) = m_exog_sto_e(n,sto) ;
+N_RSVR_P.lo(n,rsvr) =  m_exog_rsvr_p(n,rsvr) ;
+NTC.lo(l) = m_exog_ntc(l) ;
+
+N_TECH.up(n,tech) = m_exog_p(n,tech) + 0.1 ;
+N_STO_P.up(n,sto) = m_exog_sto_p(n,sto) + 0.1 ;
+N_STO_E.up(n,sto) = m_exog_sto_e(n,sto) + 0.1 ;
+N_RSVR_P.up(n,rsvr) =  m_exog_rsvr_p(n,rsvr) + 0.1 ;
+NTC.up(l) = m_exog_ntc(l) + 0.1 ;
+
+*N_TECH.lo(n,'OCGT') = m_exog_p(n,'OCGT') ;
+*N_TECH.up(n,'OCGT') = inf ;
 $offtext
 
+*** Investment model
+*$ontext
+N_TECH.lo(n,tech) = 0 ;
+N_TECH.lo(n,'wind_on') = m_exog_p(n,'wind_on') ;
+N_TECH.lo(n,'wind_off') = m_exog_p(n,'wind_off') ;
+N_TECH.lo(n,'pv') = m_exog_p(n,'pv') ;
+N_STO_P.lo(n,sto) = m_exog_sto_p(n,sto) ;
+N_STO_E.lo(n,sto) = m_exog_sto_e(n,sto) ;
+N_RSVR_P.lo(n,rsvr) =  m_exog_rsvr_p(n,rsvr) ;
+NTC.lo(l) = m_exog_ntc(l) ;
 
+N_TECH.up(n,tech) = m_exog_p(n,tech) + 0.1 ;
+N_TECH.up(n,'wind_on') = inf ;
+N_TECH.up(n,'wind_off') = inf ;
+N_TECH.up(n,'pv') = inf ;
+N_STO_P.up(n,sto) = m_exog_sto_p(n,sto) + 0.1 ;
+N_STO_E.up(n,sto) = m_exog_sto_e(n,sto) + 0.1 ;
+N_STO_P.up(n,'sto1') = inf ;
+N_STO_P.up(n,'sto5') = inf ;
+N_STO_P.up(n,'sto7') = inf ;
+N_STO_E.up(n,'sto1') = inf ;
+N_STO_E.up(n,'sto5') = inf ;
+N_STO_E.up(n,'sto7') = inf ;
+N_RSVR_P.up(n,rsvr) =  m_exog_rsvr_p(n,rsvr) + 0.1 ;
+NTC.up(l) = m_exog_ntc(l) + 0.1 ;
+*$offtext
+
+
+$ontext
+** Correction for vRES FLH according to EU Reference Scenario
+phi_res('DE','wind_on',h) = 1.0162 * phi_res('DE','wind_on',h) ;
+*phi_res('FR','wind_on',h) = 1.2541 * phi_res('FR','wind_on',h);
+*phi_res('DK','wind_on',h) = 1.1851 * phi_res('DK','wind_on',h);
+*phi_res('BE','wind_on',h) = 1.3129 * phi_res('BE','wind_on',h);
+*phi_res('NL','wind_on',h) = 1.1685 * phi_res('NL','wind_on',h);
+*phi_res('PL','wind_on',h) = 1.0749 * phi_res('PL','wind_on',h);
+*phi_res('CZ','wind_on',h) = 1.000 * phi_res('CZ','wind_on',h);
+*phi_res('AT','wind_on',h) = 1.0626 * phi_res('AT','wind_on',h);
+*phi_res('CH','wind_on',h) = 1.3852 * phi_res('CH','wind_on',h);
+
+phi_res('DE','pv',h) = 1.0447 * phi_res('DE','pv',h);
+*phi_res('FR','pv',h) = 1.2995 * phi_res('FR','pv',h);
+*phi_res('DK','pv',h) = 1.0000 * phi_res('DK','pv',h);
+*phi_res('BE','pv',h) = 1.0088 * phi_res('BE','pv',h);
+*phi_res('NL','pv',h) = 1.0000 * phi_res('NL','pv',h);
+*phi_res('PL','pv',h) = 1.0000 * phi_res('PL','pv',h);
+*phi_res('CZ','pv',h) = 1.0000 * phi_res('CZ','pv',h);
+*phi_res('AT','pv',h) = 1.1658 * phi_res('AT','pv',h);
+*phi_res('CH','pv',h) = 1.1658 * phi_res('CH','pv',h);
+
+** Correction for vRES FLH - all values below 1
+phi_res(n,'wind_on',h)$(phi_res(n,'wind_on',h) > 1) = 1 ;
+phi_res(n,'wind_off',h)$(phi_res(n,'wind_on',h) > 1) = 1 ;
+phi_res(n,'pv',h)$(phi_res(n,'pv',h) > 1) = 1 ;
+$offtext
+
+*phi_rsvr_lev_min(n,rsvr) = 0.0 ;
+
+%GER_only%N_RSVR_E.lo('FR',rsvr) = 600 * m_exog_rsvr_p('FR',rsvr) ;
+%GER_only%N_RSVR_E.lo('AT',rsvr) = 1700 * m_exog_rsvr_p('AT',rsvr) ;
+%GER_only%N_RSVR_E.lo('CH',rsvr) = 3000 * m_exog_rsvr_p('CH',rsvr) ;
+
+
+* Germany only, no infeasibility
+NTC.fx(l) = 0 ;
+F.fx(l,h) = 0 ;
+G_INFES.fx(n,h) = 0 ;
+
+
+* Heating
+Parameter
+security_margin_n_heat_out /1.0/
+;
+
+* Parameterization of water-based heat storage
+n_heat_p_out(n,bu,ch) = security_margin_n_heat_out * smax( h , dh(n,bu,ch,h) + d_dhw(n,bu,ch,h) ) ;
+n_heat_e(n,bu,ch) = 3 * n_heat_p_out(n,bu,ch) ;
+*n_heat_p_in(n,bu,ch)$n_heat_e(n,bu,ch) = n_heat_p_out(n,bu,ch) / n_heat_e(n,bu,ch) ;
+n_heat_p_in(n,bu,ch) = n_heat_p_out(n,bu,ch) ;
+n_heat_p_in(n,bu,'hp_gs') = n_heat_p_out(n,bu,'hp_gs') / ( eta_heat_dyn(n,bu,'hp_gs') * (temp_sink(n,bu,'hp_gs')+273.15) / (temp_sink(n,bu,'hp_gs') - 10) ) ;
+* mindestens -5°C entspricht 98% der Stunden; Minimum: -13.4
+n_heat_p_in(n,bu,'hp_as') = n_heat_p_out(n,bu,'hp_as') / ( eta_heat_dyn(n,bu,'hp_as') * (temp_sink(n,bu,'hp_as')+273.15) / (temp_sink(n,bu,'hp_as') + 5) ) ;
+*n_heat_p_in(n,bu,hel) = ? * n_heat_p_out(n,bu,ch) ;
+
+* Parameterization of SETS
+n_sets_p_out(n,bu,ch) = security_margin_n_heat_out * smax( h , dh(n,bu,ch,h) ) ;
+n_sets_p_in(n,bu,ch) = 2 * n_sets_p_out(n,bu,ch) ;
+n_sets_e(n,bu,ch) = 16 * n_sets_p_out(n,bu,ch) ;
+
+* Parameterization of DHW SETS
+*** ### Check with RV team!
+n_sets_dhw_p_out(n,bu,ch) = security_margin_n_heat_out * smax( h , d_dhw(n,bu,ch,h) ) ;
+n_sets_dhw_p_in(n,bu,ch) = n_sets_dhw_p_out(n,bu,ch) ;
+n_sets_dhw_e(n,bu,ch) = 2.2 * n_sets_dhw_p_out(n,bu,ch) ;
+
+*RP_SETS_AUX.fx(n,reserves,bu,ch,h) = 0 ;
+*RP_SETS.fx(n,reserves,bu,ch,h) = 0 ;
+*RP_HP.fx(n,reserves,bu,ch,h) = 0 ;
+*RP_H_ELEC.fx(n,reserves,bu,ch,h) = 0 ;

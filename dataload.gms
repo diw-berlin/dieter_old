@@ -2,7 +2,7 @@
 ********************************************************************************
 $ontext
 The Dispatch and Investment Evaluation Tool with Endogenous Renewables (DIETER).
-Version 1.2.0, February 2017.
+Version 1.#, April 2018.
 Written by Alexander Zerrahn and Wolf-Peter Schill.
 This work is licensed under the MIT License (MIT).
 For more information on this license, visit http://opensource.org/licenses/mit-license.php.
@@ -12,321 +12,788 @@ $offtext
 ********************************************************************************
 
 
-*********************************************
-**** Defines and uploads parameters      ****
-*********************************************
 
+
+***************  SETS  *********************************************************
+
+***** Sets used in the model *****
+Sets
+tech                     Generation technologies
+ dis(tech)               Dispatchable generation technologies
+ nondis(tech)            Nondispatchable generation technologies
+ con(tech)               Conventional generation technologies
+ res(tech)               Renewable generation technologies
+sto                      Storage technologies
+rsvr                     Reservoir technologies
+dsm                      DSM technologies
+ dsm_shift(dsm)          DSM load shifting technologies
+ dsm_curt(dsm)           DSM load curtailment technologies
+year                     Base year for temporal data
+h                        Hours
+n                        Nodes
+l                        Lines
+ev                       EV types
+reserves                         Reserve qualities
+ reserves_up(reserves)           Positive reserves
+ reserves_do(reserves)           Negative reserves
+ reserves_spin(reserves)         Spinning reserves
+ reserves_nonspin(reserves)      Nonspinning reserves
+ reserves_prim(reserves)         Primary reserves
+ reserves_nonprim(reserves)      Nonprimary reserves
+ reserves_prim_up(reserves)         Primary positive reserves
+ reserves_nonprim_up(reserves)      Nonprimary positive reserves
+ reserves_prim_do(reserves)         Primary negative reserves
+ reserves_nonprim_do(reserves)      Nonprimary negative reserves
+bu                       Building archtypes
+ch                       Heating combination type
+ hst(ch)                 Heating technology that feeds to storage
+ hp(ch)                  Heat pump technologies
+ hel(ch)
+ hfo(ch)
+
+
+***** Sets used for data upload *****
+headers_tech                     Generation technologies - upload headers
+ tech_dispatch                   Generation technologies - dispatchable or nondispatchable
+ tech_res_con                    Generation technologies - renewable or "conventional"
+headers_sto                      Storage technologies - upload headers
+headers_reservoir                Reservoir technologies - upload headers
+headers_dsm                      DSM technologies - upload headers
+ dsm_type                        DSM technologies - shifting or curtailment
+headers_time                     Temporal data - upload headers
+headers_topology                 Spatial data - upload headers
+headers_ev                       EV data - upload headers
+headers_time_ev                  EV temporal data - upload headers
+headers_prosumage_generation     Prosumage generation data - upload headers
+headers_prosumage_storage        Prosumage storage data - upload headers
+headers_reserves                 Reserve data - upload headers
+ reserves_up_down                Reserve data - positive and neagtive reserves
+ reserves_spin_nonspin           Reserve data - spinning and nonspinning reserves
+ reserves_prim_nonprim           Reserve data - primary and nonprimary reserves
+headers_heat                     Heat data - upload headers
+ heat_storage                     Heat data - storage technologies
+ heat_hp                         Heat data - heat pump technologies
+ heat_elec
+ heat_fossil
+headers_time_heat                Heat data - upload headers time data
+headers_time_dhw
+;
+
+
+
+
+***************  PARAMETERS  ***************************************************
 
 Parameters
 
-***** Conventionals *****
-
-*--- Generation and fixed ---*
-eta_con(ct)              Efficiency of conventional technologies
-carbon_content(ct)       CO2 emissions per fuel unit used
-c_up(ct)                 Load change costs UP in EUR per MW
-c_do(ct)                 Load change costs DOWN in EUR per MW
-c_fix_con(ct)            Annual fixed costs per MW
-c_var_con(ct)            Variable O&M costs per MWh
+***** Generation technologies *****
+*--- Variable and fixed costs ---*
+eta              Efficiency of conventional technologies in [0 1]
+carbon_content   CO2 emissions per fuel unit used in tons per MWh thermal
+c_up             Load change costs UP in EUR per MW
+c_do             Load change costs DOWN in EUR per MW
+c_fix            Annual fixed costs per MW per year
+c_vom            Variable O&M costs per MWh
+CO2price         CO2 price in Euro per ton
 
 *--- Investment ---*
-c_inv_overnight_con(ct)  Investment costs: Overnight
-inv_lifetime_con(ct)     Investment costs: technical lifetime
-inv_recovery_con(ct)     Investment costs: Recovery period according to depreciation tables
-inv_interest_con(ct)     Investment costs: Interest rate
-m_con(ct)                Investment: maximum installable capacity per technology
-m_con_e(ct)              Investment: maximum installable energy in TWh per a
+c_inv_overnight  Investment costs in Euro per MW: Overnight
+lifetime         Investment costs: technical lifetime in years
+recovery         Investment costs: Recovery period according to depreciation tables in years
+interest_rate    Investment costs: Interest rate in percent
+m_p              Investment: maximum installable capacity per technology in MW
+m_e              Investment: maximum installable energy in TWh per a
 
 *--- Flexibility ---*
-grad_per_min(ct)         Maximum load change per minute relative to installed capacity
+grad_per_min     Maximum load change relative to installed capacity in percent of installed capacity per minute
 
 
 ***** Fuel and CO2 costs *****
-
-con_fuelprice(ct)        Fuel price conventionals in Euro per MWth
-con_CO2price             CO2 price
+fuelprice        Fuel price conventionals in Euro per MWh thermal
 
 
 ***** Renewables *****
-
-*--- Generation and fixed costs ---*
-c_cu(res)                Hourly Curtailment costs for renewables per MW
-c_fix_res(res)           Annual fixed costs per MW
-phi_min_res              Upload parameter: Minimum required renewables generation
-
-*--- Investment ---*
-c_inv_overnight_res(res) Investment costs: Overnight
-inv_lifetime_res(res)    Investment costs: technical lifetime
-inv_recovery_res(res)    Investment costs: Recovery period
-inv_interest_res(res)    Investment costs: Interest rate
-m_res(res)               Investment: maximum installable capacity
-m_res_e(res)             Investment: maximum installable energy in TWh per a
-
-
-***** Time Data *****
-d_y(year,h)              Demand hour h for cost minimization for different years
-d(h)                     Demand hour h for cost minimization
-phi_res_y(year,res,h)    Renewables availability technology res in hour h for different years
-phi_res(res,h)           Renewables availability technology res in hour h
-phi_ror(h)               Run-of-river availability in hour h
-n_ev_p(ev,h)             Power rating of the charging connection in MW in hour h (0 when car is in use or parked without grid connection)
-ev_ed(ev,h)              Electricity demand for mobility vehicle profile ev in hour h in MW
-ev_ged_exog(ev,h)        Electricity demand for mobility in case of uncontrolled charging vehicle profile ev in hour h in MW
+c_cu             Hourly Curtailment costs for renewables in Euro per MW
+phi_min_res      Minimum renewables share in [0 1]
 
 
 ***** Storage *****
-
-*--- Generation and fixed costs ---*
-c_m_sto(sto)             Marginal costs of storing in or out
-eta_sto(sto)             Storage efficiency
-eta_sto_in(sto)          Storage loading efficiency
-eta_sto_out(sto)         Storage discharging efficiency
-phi_sto_ini(sto)         Initial storage level
-etop_max(sto)            Maximum E to P ratio of storage types
-c_fix_sto(sto)           Annual fixed costs per MW
+*--- Variable and fixed costs ---*
+c_m_sto          Marginal costs of storing in or out in Euro per MWh
+eta_sto          Storage efficiency in [0 1]
+phi_sto_ini      Initial storage level in [0 1]
+etop_max         Maximum E to P ratio of storage types
+c_fix_sto        Annual fixed costs in Euro per MW
 
 *--- Investment ---*
-c_inv_overnight_sto_e(sto)       Investment costs for storage energy in MWh: Overnight
-c_inv_overnight_sto_p(sto)       Investment costs for storage capacity in MW: Overnight
-inv_lifetime_sto(sto)            Investment costs for storage: technical lifetime
-inv_recovery_sto(sto)            Investment costs for storage: Recovery period
-inv_interest_sto(sto)            Investment costs for storage: Interest rate
-m_sto_e(sto)                     Investment into storage: maximum installable energy in MWh
-m_sto_p(sto)                     Investment into storage: maximum installable capacity in MW
+c_inv_overnight_sto_e       Investment costs for storage energy in Euro per MWh: Overnight
+c_inv_overnight_sto_p       Investment costs for storage capacity in Euro per MW: Overnight
+m_sto_e                     Investment into storage: maximum installable energy in MWh
+m_sto_p                     Investment into storage: maximum installable power in MW
 
 
-***** Electric vehicles *****
-c_m_ev(ev)               Marginal costs of discharging V2G
-pen_phevfuel             Penalty for non-electric PHEV operation mode
-eta_ev_in(ev)            Electric vehicle efficiency of charging (G2V)
-eta_ev_out(ev)           Electric vehicle efficiency of discharging (V2G)
-phi_ev_ini(ev)           Electric vehicle charging level in initial period
+***** Reservoir*****
+*--- Variable and fixed costs ---*
+c_m_rsvr                 Marginal costs of generating energy from reservoir in Euro per MWh
+eta_rsvr                 Generation efficiency in [0 1]
+phi_rsvr_ini             Initial reservoir level in [0 1]
+c_fix_rsvr               Annual fixed costs in Euro per MW per year
+phi_rsvr_min             Minimum hourly reservoir outflow as fraction of annual energy in [0 1]
+phi_rsvr_lev_min         Minimum filling level in [0 1]
 
-n_ev_e(ev)               Electric vehicle battery capacity in MWh
-ev_quant                 Overall number of electirc vehicles
-phi_ev(ev)               Share of electric vehicles per load profile in actual scenario
-ev_phev(ev)              Defines whether an electric vehicle is a PHEV REEV (1 if yes 0 otherwise)
+*--- Investment ---*
+c_inv_overnight_rsvr_e   Investment costs for reservoir energy in Euro per MWh: Overnight
+c_inv_overnight_rsvr_p   Investment costs for reservoir capacity in Euro per MW: Overnight
+inv_lifetime_rsvr        Investment costs for reservoir: technical lifetime in years
+inv_interest_rsvr        Investment costs for reservoir: Interest rate in percent
+m_rsvr_e                 Investment into reservoir: maximum installable energy in MWh
+m_rsvr_p                 Investment into reservoir: maximum installable capacity in MW
 
 
 ***** DSM *****
-
-*--- Generation and fixed costs ---*
-c_m_dsm_cu(dsm_curt)             DSM: hourly costs of load curtailment
-c_m_dsm_shift(dsm_shift)         DSM: costs for load shifting
-c_fix_dsm_cu(dsm_curt)           Annual fixed costs per MW load curtailment capacity
-c_fix_dsm_shift(dsm_shift)       Annual fixed costs per MW load shifting capacity
+*--- Variable and fixed costs ---*
+c_m_dsm_cu       DSM: hourly costs of load curtailment in Euro per MWh
+c_m_dsm_shift    DSM: costs for load shifting in Euro per MWh
+c_fix_dsm_cu     Annual fixed costs load curtailment capacity in Euro per MW per year
+c_fix_dsm_shift  Annual fixed costs load shifting capacity in Euro per MW per year
 
 *--- Flexibility, efficiency, recovery ---*
-t_dur_dsm_cu(dsm_curt)           DSM: Maximum duration load curtailment
-t_off_dsm_cu(dsm_curt)           DSM: Minimum recovery time between two load curtailment instances
+t_dur_dsm_cu     DSM: Maximum duration load curtailment in hours
+t_off_dsm_cu     DSM: Minimum recovery time between two load curtailment instances in hours
 
-t_dur_dsm_shift(dsm_shift)       DSM: Maximum duration load shifting
-t_off_dsm_shift(dsm_shift)       DSM: Minimum recovery time between two granular load upshift instances
-eta_dsm_shift(dsm_shift)         DSM: Efficiency of load shifting technologies
+t_dur_dsm_shift  DSM: Maximum duration load shifting in hours
+t_off_dsm_shift  DSM: Minimum recovery time between two granular load upshift instances in hours
+eta_dsm_shift    DSM: Efficiency of load shifting technologies in [0 1]
 
 *--- Investment ---*
-c_inv_overnight_dsm_cu(dsm_curt)         Investment costs for DSM load curtailment: Overnight
-c_inv_overnight_dsm_shift(dsm_shift)     Investment costs for DSM load shifting: Overnight
-inv_recovery_dsm_cu(dsm_curt)            Investment costs for DSM load curtailment: Recovery period
-inv_recovery_dsm_shift(dsm_shift)        Investment costs for DSM load shifting: Recovery period
-inv_interest_dsm_cu(dsm_curt)            Investment costs for DSM load curtailment: Interest rate
-inv_interest_dsm_shift(dsm_shift)        Investment costs for DSM load shifting: Interest rate
-m_dsm_cu(dsm_curt)                       DSM: Maximum installable capacity load curtailment
-m_dsm_shift(dsm_shift)                   DSM: Maximum installable capacity load shifting
+c_inv_overnight_dsm_cu           Investment costs for DSM load curtailment in Euro per MW: Overnight
+c_inv_overnight_dsm_shift        Investment costs for DSM load shifting in Euro per MW: Overnight
+inv_recovery_dsm_cu              Investment costs for DSM load curtailment: Recovery period in years
+inv_recovery_dsm_shift           Investment costs for DSM load shifting: Recovery period in years
+inv_interest_dsm_cu              Investment costs for DSM load curtailment: Interest rate in percent
+inv_interest_dsm_shift           Investment costs for DSM load shifting: Interest rate in percent
+m_dsm_cu                         DSM: Maximum installable capacity load curtailment in MW
+m_dsm_shift                      DSM: Maximum installable capacity load shifting in MW
 
 
-***** Reserves *****
-phi_reserves_share(reserves)             Shares of SRL and MRL up and down
-reserves_intercept(reserves)
-reserves_slope(reserves,res)
-reserves_reaction(reserves)              Activation reaction time for reserves qualities in minutes
-phi_reserves_call_y(year,reserves,h)     Hourly share of reserve provision that is actually activated
-phi_reserves_call(reserves,h)            Hourly share of reserve provision that is actually activated
-phi_reserves_pr                          Primary reserves demand as fraction of sum of all secondary and tertiary reserves demand
+***** Time Data *****
+d_y                      Demand hour h for different years in MWh
+d                        Demand hour h in MWh
+phi_res_y                Renewables availability technology res in hour h for different years in [0 1]
+phi_res                  Renewables availability technology res in hour h in [0 1]
+phi_ror_y                Run-of-river availability technology ror in hour h for different years in [0 1]
+phi_ror                  Run-of-river availability technology ror in hour h in [0 1]
+rsvr_in_y                Reservoir inflow in hour h for different years in [0 1]
+rsvr_in                  Reservoir inflow in hour h in [0 1]
+n_ev_p_upload            Power rating of the charging connection in MW in hour h (0 when car is in use or parked without grid connection)
+ev_ed_upload             Electricity demand for mobility vehicle profile ev in hour h in MW
+ev_ged_exog_upload       Electricity demand for mobility in case of uncontrolled charging vehicle profile ev in hour h in MW
+phi_reserves_call_y      Hourly share of reserve provision that is actually activated for different years in [0 1]
+phi_reserves_call        Hourly share of reserve provision that is actually activated in [0 1]
+reserves_exogenous_y      Hourly reserve provision for different years in MW
+reserves_exogenous        Hourly reserve provision in MW
+
+***** Transmission *****
+*--- Investment ---*
+c_inv_overnight_ntc       Investment costs in Euro per MW: overnight
+c_fix_ntc                 Fixed costs in Euro per MW per year
+inv_lifetime_ntc          Investment costs: technical lifetime in years
+inv_recovery_ntc          Investment costs: Recovery period in years
+inv_interest_ntc          Investment costs: Interest rate in percent
+m_ntc                     Investment into NTC: maximum installable capacity in MW
+
+*--- Topology and distance ---*
+inc              Incidence index of link l on node n
+dist             Distance covered by link l in kilometers
+
+
+***** Electric vehicles *****
+*--- Costs and attributes ---*
+c_m_ev           Marginal costs of discharging V2G in Euro per MWh
+pen_phevfuel     Penalty for non-electric PHEV operation mode in Euro per MWh
+eta_ev_in        Electric vehicle efficiency of charging (G2V) in [0 1]
+eta_ev_out       Electric vehicle efficiency of discharging (V2G) in [0 1]
+phi_ev_ini       Electric vehicle charging level in initial period in [0 1]
+
+n_ev_e           Electric vehicle battery capacity in MWh
+ev_quant         Overall number of electirc vehicles
+phi_ev           Share of electric vehicles per load profile in actual scenario in [0 1]
+ev_phev          Defines whether an electric vehicle is a PHEV REEV (1 if yes 0 otherwise)
+
+*--- Tempoal data ---*
+n_ev_p           Electric vehicle power rating in MWh
+ev_ed            Electric vehicle electricity demand in MWh
+ev_ged_exog      Electric vehicle grid electricity demand for exogenous charging pattern in MWh
 
 
 ***** Prosumage *****
-phi_pro_load                             Share of prosumagers among total load
-phi_pro_self                             Minimum self-generation shares for prosumagers
-m_res_pro(res)                           Maximum installable: renewables capacity
-m_sto_pro_e(sto)                         Maximum installable: storage energy
-m_sto_pro_p(sto)                         Maximum installable: storage capacity
-phi_sto_pro_ini                          Prosumagers' initial storage loading
+phi_pro_load             Share of prosumagers among total load in [0 1]
+phi_pro_self             Minimum self-generation shares for prosumagers in [0 1]
+m_res_pro                Maximum installable: renewables capacity in MW
+m_sto_pro_e              Maximum installable: storage energy in MWh
+m_sto_pro_p              Maximum installable: storage capacity in MW
+phi_sto_pro_ini          Prosumagers' initial storage loading in [0 1]
+
+
+***** Reserves *****
+phi_reserves_share       Shares of SRL and MRL up and down in [0 1]
+reserves_intercept       Intercept of regression line determining reserves demand
+reserves_slope           Slope of regression line determining reserves demand
+reserves_reaction        Activation reaction time for reserves qualities in minutes
+phi_reserves_pr_up       Positive primary reserves fraction of total nonprimary reserves demand in [0 1]
+phi_reserves_pr_do       Negative primary reserves fraction of total nonprimary reserves demand in [0 1]
+*reserves_exog
+
+***** Heat *****
+*--- Time data ---*
+dh_upload                Hourly deat demand per year for upload in MWh
+dh_y                     Hourly deat demand per year in MWh
+dh                       Hourly heat demand in MWh
+temp_source              Heat pumps - source temperature in degrees Celsius
+d_dhw_upload
+d_dhw_y
+d_dhw
+nets_profile(h)
+
+*--- Technololgy attributes ---*
+phi_heat_type            Share of heating type ch per building archetype bu in [0 1]
+eta_heat_stat            Static efficiency for heating technologies in [0 1]
+eta_heat_dyn             Static efficiency for heating technologies in [0 1]
+eta_dhw_aux_stat
+n_heat_p_in              Maximum power inflow into heating technologies in MW
+n_heat_p_out             Maximum power outflow from heating technologies in MW
+n_heat_e                 Maximum energy outflow in heating storage technologies in MWh
+n_sets_p_in
+n_sets_p_out
+n_sets_e
+n_sets_dhw_p_in
+n_sets_dhw_p_out
+n_sets_dhw_e
+phi_heat_ini             Inititial storage level of heating technologies in [0 1]
+temp_sink                Heat pumps - sink temperature in degrees Celsius
+pen_heat_fuel            Penalty term for non-electric fuel usage for hybrid heating technologies in Euro per MWh
+area_floor
+theta_night
+
+
+
+***************  DERIVED PARAMETERS  *******************************************
+
+c_m              Marginal production costs for conventional plants including variable O and M costs in Euro per MWh
+c_i              Annualized investment costs by conventioanl plant per MW in Euro per MW
+
+c_i_res          Annualized investment costs by renewable plant in Euro per MW
+c_fix_res        Annualized fixed costs by renewable plant in Euro per MW per year
+
+c_i_sto_e        Annualized investment costs storage energy in Euro per MWh
+c_i_sto_p        Annualized investment costs storage capacity in Euro per MW
+
+c_i_rsvr_e       Annualized investment costs storage energy in Euro per MWh
+c_i_rsvr_p       Annualized investment costs storage capacity in Euro per MW
+
+c_i_dsm_cu       DSM: Annualized investment costs load curtailment in Euro per MW
+c_i_dsm_shift    DSM: Annualized investment costs load shifting in Euro per MW
+
+c_i_ntc          Investment for net transfer capacity in Euro per MW and km
+
+phi_mean_reserves_call_y         Hourly mean of share reserves called per year in [0 1]
+phi_mean_reserves_call           Hourly mean of share reserves called in [0 1]
+
+theta_dir        Dummy equal to 1 if building type ch has direct heating type ch
+theta_sets       Dummy equal to 1 if building type ch has SETS heating type ch
+theta_hp         Dummy equal to 1 if building type ch has heat pump heating type ch
+theta_elec
+theta_fossil
+
+*theta_hye        Dummy equal to 1 if building type ch has hybrid electric heating type ch
+theta_storage    Dummy equal to 1 if building type ch has storage heating type ch
+
+
+
+
+***************  PARAMETERS FOR DATA UPLOAD  ***********************************
+
+technology_data_upload(n,tech,tech_res_con,tech_dispatch,headers_tech)
+technology_data(n,tech,headers_tech)
+storage_data(n,sto,headers_sto)
+reservoir_data(n,rsvr,headers_reservoir)
+time_data_upload(h,n,year,headers_time)
+dsm_data_upload(n,dsm,dsm_type,headers_dsm)
+dsm_data(n,dsm,headers_dsm)
+topology_data(l,headers_topology)
+ev_data(n,ev,headers_ev)
+ev_time_data_upload(h,headers_time_ev,ev)
+prosumage_data_generation(n,tech,headers_prosumage_generation)
+prosumage_data_storage(n,sto,headers_prosumage_storage)
+reserves_time_data_activation(h,year,reserves)
+reserves_time_data_provision(h,year,reserves)
+reserves_data_upload(n,reserves,reserves_up_down,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)
+reserves_data(n,reserves,headers_reserves)
+heat_data_upload(n,bu,ch,heat_storage,heat_hp,heat_elec,heat_fossil,headers_heat)
+heat_data(n,bu,ch,headers_heat)
+dh_upload(h,n,year,headers_time_heat,bu)
+d_dhw_upload(h,n,year,headers_time_heat,bu)
+temp_source_upload
 ;
 
-********************************************************************************
 
+
+
+***************  UPLOAD TIME-CONSTANT SETS AND PARAMETERS  *********************
 
 $onecho >temp.tmp
-par=eta_con              rng=Conventionals!c5:d12        rdim=1 cdim=0
-par=carbon_content       rng=Conventionals!c15:d22       rdim=1 cdim=0
-par=c_up                 rng=Conventionals!c105:d112     rdim=1 cdim=0
-par=c_do                 rng=Conventionals!c115:d122     rdim=1 cdim=0
-par=c_fix_con            rng=Conventionals!c25:d32       rdim=1 cdim=0
-par=c_var_con            rng=Conventionals!c35:d42       rdim=1 cdim=0
-par=c_inv_overnight_con  rng=Conventionals!c45:d52       rdim=1 cdim=0
-par=inv_lifetime_con     rng=Conventionals!c55:d62       rdim=1 cdim=0
-par=inv_recovery_con     rng=Conventionals!c65:d72       rdim=1 cdim=0
-par=inv_interest_con     rng=Conventionals!c75:d82       rdim=1 cdim=0
-par=m_con                rng=Conventionals!c85:d92       rdim=1 cdim=0
-par=m_con_e              rng=Conventionals!c95:d102      rdim=1 cdim=0
-par=grad_per_min         rng=Conventionals!c125:d132     rdim=1 cdim=0
+se=0
 
-par=c_cu                 rng=Renewables!c4:d6            rdim=1 cdim=0
-par=c_fix_res            rng=Renewables!c9:d11           rdim=1 cdim=0
-par=c_inv_overnight_res  rng=Renewables!c15:d17          rdim=1 cdim=0
-par=inv_lifetime_res     rng=Renewables!c20:d22          rdim=1 cdim=0
-par=inv_recovery_res     rng=Renewables!c25:d27          rdim=1 cdim=0
-par=inv_interest_res     rng=Renewables!c30:d32          rdim=1 cdim=0
-par=m_res                rng=Renewables!c35:d37          rdim=1 cdim=0
-par=m_res_e              rng=Renewables!c40:d42          rdim=1 cdim=0
+dset=n                                   rng=spatial!M2                  rdim=0 cdim=1
 
-par=con_fuelprice        rng=Fuel_CO2!a4:b12             rdim=1 cdim=0
-par=con_CO2price         rng=Fuel_CO2!b18:b18            rdim=0 cdim=0
+dset=tech                                rng=Technologies!B6             rdim=1 cdim=0
+dset=headers_tech                        rng=Technologies!E5             rdim=0 cdim=1
+dset=tech_dispatch                       rng=Technologies!D6             rdim=1 cdim=0
+dset=tech_res_con                        rng=Technologies!C6             rdim=1 cdim=0
 
-par=d_y                  rng=Time_Data!c48:lya52         rdim=1 cdim=1
-par=phi_res_y            rng=Time_Data!b55:lya67         rdim=2 cdim=1
-par=phi_ror              rng=Time_Data!d30:lya31         rdim=0 cdim=1
+dset=sto                                 rng=storage!B6                  rdim=1 cdim=0
+dset=headers_sto                         rng=storage!C5                  rdim=0 cdim=1
 
-par=n_ev_p               rng=Time_Data!c75:lya103        rdim=1 cdim=1
-par=ev_ed                rng=Time_Data!c109:lya137       rdim=1 cdim=1
-par=ev_ged_exog          rng=Time_Data!c144:lya172       rdim=1 cdim=1
+dset=rsvr                                rng=reservoir!B6                rdim=1 cdim=0
+dset=headers_reservoir                   rng=reservoir!C5                rdim=0 cdim=1
 
-par=c_m_dsm_shift                rng=DSM!c10:d14         rdim=1 cdim=0
-par=c_fix_dsm_shift              rng=DSM!c20:d24         rdim=1 cdim=0
-par=c_inv_overnight_dsm_shift    rng=DSM!c33:d37         rdim=1 cdim=0
-par=inv_recovery_dsm_shift       rng=DSM!c43:d47         rdim=1 cdim=0
-par=inv_interest_dsm_shift       rng=DSM!c52:d56         rdim=1 cdim=0
-par=m_dsm_shift                  rng=DSM!c64:d68         rdim=1 cdim=0
-par=t_dur_dsm_shift              rng=DSM!c74:d78         rdim=1 cdim=0
-par=t_off_dsm_shift              rng=DSM!c83:d87         rdim=1 cdim=0
-par=eta_dsm_shift                rng=DSM!c92:d96         rdim=1 cdim=0
+dset=dsm                                 rng=DSM!B6                      rdim=1 cdim=0
+dset=headers_dsm                         rng=DSM!D5                      rdim=0 cdim=1
+dset=dsm_type                            rng=DSM!C6                      rdim=1 cdim=0
 
-par=c_m_dsm_cu                   rng=DSM!c5:d7           rdim=1 cdim=0
-par=c_fix_dsm_cu                 rng=DSM!c17:d19         rdim=1 cdim=0
-par=c_inv_overnight_dsm_cu       rng=DSM!c28:d30         rdim=1 cdim=0
-par=inv_recovery_dsm_cu          rng=DSM!c40:d42         rdim=1 cdim=0
-par=inv_interest_dsm_cu          rng=DSM!c49:d51         rdim=1 cdim=0
-par=m_dsm_cu                     rng=DSM!c59:d61         rdim=1 cdim=0
-par=t_dur_dsm_cu                 rng=DSM!c71:d73         rdim=1 cdim=0
-par=t_off_dsm_cu                 rng=DSM!c80:d82         rdim=1 cdim=0
+dset=l                                   rng=spatial!B3                  rdim=1 cdim=0
+dset=headers_topology                    rng=spatial!B2                  rdim=0 cdim=1
 
-par=c_m_sto                      rng=Storage!c4:d10      rdim=1 cdim=0
-par=eta_sto                      rng=Storage!c13:d19     rdim=1 cdim=0
-par=c_fix_sto                    rng=Storage!c22:d28     rdim=1 cdim=0
-par=c_inv_overnight_sto_e        rng=Storage!c31:d37     rdim=1 cdim=0
-par=c_inv_overnight_sto_p        rng=Storage!c40:d46     rdim=1 cdim=0
-par=inv_lifetime_sto             rng=Storage!c48:d54     rdim=1 cdim=0
-par=inv_recovery_sto             rng=Storage!c32:d34     rdim=1 cdim=0
-par=inv_interest_sto             rng=Storage!c60:d66     rdim=1 cdim=0
-par=m_sto_e                      rng=Storage!c69:d75     rdim=1 cdim=0
-par=m_sto_p                      rng=Storage!c77:d83     rdim=1 cdim=0
-par=phi_sto_ini                  rng=Storage!c85:d91     rdim=1 cdim=0
-par=etop_max                     rng=Storage!c93:d99     rdim=1 cdim=0
+dset=ev                                  rng=ev!B6                       rdim=1 cdim=0
+dset=headers_ev                          rng=ev!C5                       rdim=0 cdim=1
 
-par=c_m_ev               rng=EV!c4:d31           rdim=1 cdim=0
-par=pen_phevfuel         rng=EV!d34:d34          rdim=0 cdim=0
-par=eta_ev_in            rng=EV!c37:d64          rdim=1 cdim=0
-par=eta_ev_out           rng=EV!c67:d94          rdim=1 cdim=0
-par=phi_ev_ini           rng=EV!c97:d124         rdim=1 cdim=0
-par=n_ev_e               rng=EV!c127:d154        rdim=1 cdim=0
-par=phi_ev               rng=EV!c157:d184        rdim=1 cdim=0
-par=ev_phev              rng=EV!c187:d214        rdim=1 cdim=0
+dset=headers_prosumage_generation        rng=prosumage!C5                rdim=0 cdim=1
+dset=headers_prosumage_storage           rng=prosumage!I5                rdim=0 cdim=1
 
-par=phi_reserves_share           rng=Reserves!e13:f16    rdim=1 cdim=0
-par=reserves_intercept           rng=Reserves!e2:f5      rdim=1 cdim=0
-par=reserves_slope               rng=Reserves!d6:g10     rdim=1 cdim=1
-par=reserves_reaction            rng=Reserves!d79:e85    rdim=1 cdim=0
-par=phi_reserves_call_y          rng=Reserves!b49:lya73  rdim=2 cdim=1
-par=phi_reserves_pr              rng=Reserves!d87:d87    rdim=0 cdim=0
+dset=reserves                            rng=reserves!B6                 rdim=1 cdim=0
+dset=headers_reserves                    rng=reserves!F5                 rdim=0 cdim=1
+dset=reserves_up_down                    rng=reserves!C6                 rdim=1 cdim=0
+dset=reserves_spin_nonspin               rng=reserves!D6                 rdim=1 cdim=0
+dset=reserves_prim_nonprim               rng=reserves!E6                 rdim=1 cdim=0
 
-par=m_res_pro          rng=Prosumage!c5:d7     rdim=1 cdim=0
-par=m_sto_pro_e        rng=Prosumage!c10:d16   rdim=1 cdim=0
-par=m_sto_pro_p        rng=Prosumage!c19:d25   rdim=1 cdim=0
-par=phi_sto_pro_ini    rng=Prosumage!c28:d34   rdim=1 cdim=0
+dset=bu                                  rng=heat!B6                     rdim=1 cdim=0
+dset=ch                                  rng=heat!C6                     rdim=1 cdim=0
+dset=heat_storage                        rng=heat!D6                     rdim=1 cdim=0
+dset=heat_hp                             rng=heat!E6                     rdim=1 cdim=0
+
+
+dset=heat_elec                         rng=heat!F6                     rdim=1 cdim=0
+dset=heat_fossil                         rng=heat!G6                     rdim=1 cdim=0
+
+
+dset=headers_heat                        rng=heat!H5                     rdim=0 cdim=1
+
+
+
+
+par=technology_data_upload       rng=Technologies!A5     rdim=4 cdim=1
+par=storage_data                 rng=storage!A5          rdim=2 cdim=1
+par=reservoir_data               rng=reservoir!A5        rdim=2 cdim=1
+par=dsm_data_upload              rng=DSM!A5              rdim=3 cdim=1
+par=topology_data                rng=spatial!B2          rdim=1 cdim=1
+%GER_only%par=inc                          rng=spatial!L2          rdim=1 cdim=1
+par=ev_data                      rng=ev!A5               rdim=2 cdim=1
+par=prosumage_data_generation    rng=prosumage!A5        rdim=2 cdim=1
+par=prosumage_data_storage       rng=prosumage!G5        rdim=2 cdim=1
+par=reserves_data_upload         rng=reserves!A5         rdim=5 cdim=1
+par=heat_data_upload             rng=heat!A5             rdim=7 cdim=1
 $offecho
 
-%skip_Excel%$call "gdxxrw Data_Input.xlsx @temp.tmp o=Data_input";
+%skip_Excel%$call "gdxxrw data_input.xlsx @temp.tmp o=Data_input maxdupeerrors=100";
 
 $GDXin Data_input.gdx
-$load d_y phi_ror phi_res_y n_ev_p ev_ed ev_ged_exog
-$load eta_con carbon_content c_up c_do c_fix_con c_var_con c_inv_overnight_con inv_lifetime_con inv_recovery_con inv_interest_con m_con m_con_e grad_per_min
-$load con_fuelprice con_CO2price
-$load c_cu c_fix_res c_inv_overnight_res inv_lifetime_res inv_recovery_res inv_interest_res m_res m_res_e
-$load c_m_sto eta_sto c_fix_sto c_inv_overnight_sto_e c_inv_overnight_sto_p inv_lifetime_sto inv_interest_sto m_sto_e m_sto_p phi_sto_ini etop_max
-$load c_m_dsm_shift c_fix_dsm_shift c_inv_overnight_dsm_shift inv_recovery_dsm_shift inv_interest_dsm_shift m_dsm_shift t_dur_dsm_shift eta_dsm_shift t_off_dsm_shift
-$load c_m_dsm_cu c_fix_dsm_cu c_inv_overnight_dsm_cu inv_recovery_dsm_cu inv_interest_dsm_cu m_dsm_cu t_dur_dsm_cu t_off_dsm_cu
-$load c_m_ev eta_ev_in eta_ev_out pen_phevfuel phi_ev_ini n_ev_e phi_ev ev_phev
-$load phi_reserves_share reserves_intercept reserves_slope reserves_reaction phi_reserves_call_y phi_reserves_pr
-$load m_res_pro m_sto_pro_e m_sto_pro_p phi_sto_pro_ini
+$load n tech headers_tech tech_dispatch tech_res_con
+$load sto headers_sto rsvr headers_reservoir reservoir_data dsm headers_dsm dsm_type
+$load technology_data_upload storage_data dsm_data_upload
+%GER_only%$load l headers_topology topology_data inc
+%GER_only%$ontext
+$load l headers_topology topology_data
+$ontext
+$offtext
+$load ev headers_ev ev_data
+$load headers_prosumage_generation headers_prosumage_storage prosumage_data_generation prosumage_data_storage
+$load reserves reserves_up_down reserves_spin_nonspin reserves_prim_nonprim headers_reserves reserves_data_upload
+$load bu ch heat_storage heat_hp heat_elec heat_fossil headers_heat heat_data_upload
 ;
 
-
-********************************************************************************
-
-
-Parameters
-c_m(ct)        Marginal production costs for conventional plants including variable O and M costs
-c_i(ct)        Annualized investment costs by conventioanl plant per MW
-
-c_i_res(res)     Annualized investment costs by renewable plant per MW
-
-c_i_sto_e(sto)   Annualized investment costs storage energy per MWh
-c_i_sto_p(sto)   Annualized investment costs storage capacity per MW
-
-c_i_dsm_cu(dsm_curt)     DSM: Investment costs load curtailment
-c_i_dsm_shift(dsm_shift) DSM: Investment costs load shifting
-;
-
-c_m(ct) = con_fuelprice(ct)/eta_con(ct) + carbon_content(ct)/eta_con(ct)*con_CO2price + c_var_con(ct)   ;
-c_i(ct) = c_inv_overnight_con(ct)*( inv_interest_con(ct) * (1+inv_interest_con(ct))**(inv_lifetime_con(ct)) )
-                 / ( (1+inv_interest_con(ct))**(inv_lifetime_con(ct))-1 )       ;
-
-c_i_res(res) = c_inv_overnight_res(res)*( inv_interest_res(res) * (1+inv_interest_res(res))**(inv_lifetime_res(res)) )
-                 / ( (1+inv_interest_res(res))**(inv_lifetime_res(res))-1 )       ;
-
-c_i_sto_e(sto) = c_inv_overnight_sto_e(sto)*( inv_interest_sto(sto) * (1+inv_interest_sto(sto))**(inv_lifetime_sto(sto)) )
-                 / ( (1+inv_interest_sto(sto))**(inv_lifetime_sto(sto))-1 )       ;
-c_i_sto_p(sto) = c_inv_overnight_sto_p(sto)*( inv_interest_sto(sto) * (1+inv_interest_sto(sto))**(inv_lifetime_sto(sto)) )
-                 / ( (1+inv_interest_sto(sto))**(inv_lifetime_sto(sto))-1 )       ;
-
-c_i_dsm_cu(dsm_curt) = c_inv_overnight_dsm_cu(dsm_curt)*( inv_interest_dsm_cu(dsm_curt) * (1+inv_interest_dsm_cu(dsm_curt))**(inv_recovery_dsm_cu(dsm_curt)) )
-                 / ( (1+inv_interest_dsm_cu(dsm_curt))**(inv_recovery_dsm_cu(dsm_curt))-1 )       ;
-c_i_dsm_shift(dsm_shift) = c_inv_overnight_dsm_shift(dsm_shift)*( inv_interest_dsm_shift(dsm_shift) * (1+inv_interest_dsm_shift(dsm_shift))**(inv_recovery_dsm_shift(dsm_shift)) )
-                 / ( (1+inv_interest_dsm_shift(dsm_shift))**(inv_recovery_dsm_shift(dsm_shift))-1 )       ;
-
-
-
-* Adjust investment costs on model's hourly basis
-
-c_i(ct) = c_i(ct)*card(h)/8760 ;
-c_i_res(res) = c_i_res(res)*card(h)/8760 ;
-%second_hour%c_i_sto_e(sto) = c_i_sto_e(sto)*card(h)/8760 ;
-c_i_sto_p(sto) = c_i_sto_p(sto)*card(h)/8760 ;
-c_i_dsm_cu(dsm_curt) = c_i_dsm_cu(dsm_curt)*card(h)/8760 ;
-c_i_dsm_shift(dsm_shift) = c_i_dsm_shift(dsm_shift)*card(h)/8760 ;
-%second_hour%$ontext
-c_i_sto_e(sto) = c_i_sto_e(sto)*card(h)/8760 * 2 ;
-t_dur_dsm_cu(dsm_curt) = t_dur_dsm_cu(dsm_curt) / 2 ;
-t_off_dsm_cu(dsm_curt) = t_off_dsm_cu(dsm_curt) / 2 ;
-t_dur_dsm_shift(dsm_shift)$(ord(dsm_shift)=2 or ord(dsm_shift)=4 or ord(dsm_shift)=5) = t_dur_dsm_shift(dsm_shift) / 2 ;
-t_dur_dsm_shift(dsm_shift)$(ord(dsm_shift)=1 or ord(dsm_shift)=3) = 2 ;
+%GER_only%$ontext
+parameter inc ;
+inc(l,n) = 1 ;
 $ontext
 $offtext
 
-c_fix_con(ct) = c_fix_con(ct)*card(h)/8760 ;
-c_fix_res(res) = c_fix_res(res)*card(h)/8760 ;
-c_fix_sto(sto) = c_fix_sto(sto)*card(h)/8760 ;
-c_fix_dsm_cu(dsm_curt) = c_fix_dsm_cu(dsm_curt)*card(h)/8760 ;
-c_fix_dsm_shift(dsm_shift) = c_fix_dsm_shift(dsm_shift)*card(h)/8760 ;
 
-m_con_e('bio') = m_con_e('bio')*card(h)/8760 ;
+***************  UPLOAD TIME-SERIES SETS AND PARAMETERS  ***********************
 
-eta_sto_in(sto) = 0.5*eta_sto(sto);
-eta_sto_out(sto) = 0.5*eta_sto(sto);
+$onecho >temp2.tmp
+se=0
 
-parameter phi_mean_reserves_call, phi_mean_reserves_call_y ;
-phi_mean_reserves_call_y(year,reserves) = sum(h, phi_reserves_call_y(year,reserves,h) ) / card(h) + eps ;
+dset=h                           rng=basic!A6            rdim=1 cdim=0
+dset=headers_time                rng=basic!B5            rdim=0 cdim=1
+dset=year                        rng=basic!B4            rdim=0 cdim=1
+par=time_data_upload             rng=basic!A3            rdim=1 cdim=3
+
+dset=headers_time_ev             rng=ev!B4               rdim=0 cdim=1
+par=ev_time_data_upload          rng=ev!A4               rdim=1 cdim=2
+
+par=reserves_time_data_activation rng=reserves_activation!A4         rdim=1 cdim=2
+par=reserves_time_data_provision rng=reserves_provision!A4         rdim=1 cdim=2
+
+* Sollte das nicht C5 sein?
+dset=headers_time_heat           rng=heat!D5             rdim=0 cdim=1
+par=dh_upload                    rng=heat!C3             rdim=1 cdim=4
+par=theta_night                  rng=heat!A7             rdim=1 cdim=0
+
+dset=headers_time_dhw           rng=heat_dhw!A5             rdim=0 cdim=1
+par=d_dhw_upload                    rng=heat_dhw!A3             rdim=1 cdim=4
+par=nets_profile                 rng=NETS!B2:C8762       rdim=1 cdim=0
+
+par=temp_source_upload           rng=heat_pump!A4        rdim=1 cdim=2
+$offecho
+
+%skip_Excel%$call "gdxxrw time_series.xlsx @temp2.tmp o=time_series";
+
+$GDXin time_series.gdx
+$load h headers_time year time_data_upload
+$load headers_time_ev ev_time_data_upload
+$load reserves_time_data_activation
+$load reserves_time_data_provision
+$load headers_time_heat dh_upload
+$load theta_night
+$load temp_source_upload
+$load headers_time_dhw d_dhw_upload nets_profile
+;
+
+
+*$stop
+
+***************  ASSIGNMENTS  **************************************************
+
+
+
+***** Aliases *****
+alias (h,hh) ;
+alias (res,resres) ;
+alias (reserves,reservesreserves) ;
+alias (nondis,nondisnondis) ;
+
+
+
+***** Derived sets *****
+dis(tech)$sum( (n,tech_res_con,headers_tech), technology_data_upload(n,tech,tech_res_con,'dis',headers_tech)) = yes;
+nondis(tech)$sum( (n,tech_res_con,headers_tech), technology_data_upload(n,tech,tech_res_con,'nondis',headers_tech)) = yes;
+
+con(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'con',tech_dispatch,headers_tech)) = yes;
+res(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'res',tech_dispatch,headers_tech)) = yes;
+
+reserves_up(reserves)$sum( (n,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves), reserves_data_upload(n,reserves,'up',reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)) = yes;
+reserves_do(reserves)$sum( (n,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves), reserves_data_upload(n,reserves,'do',reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)) = yes;
+
+reserves_spin(reserves)$sum( (n,reserves_up_down,reserves_prim_nonprim,headers_reserves), reserves_data_upload(n,reserves,reserves_up_down,'spin',reserves_prim_nonprim,headers_reserves)) = yes;
+reserves_nonspin(reserves)$sum( (n,reserves_up_down,reserves_prim_nonprim,headers_reserves), reserves_data_upload(n,reserves,reserves_up_down,'nonspin',reserves_prim_nonprim,headers_reserves)) = yes;
+
+reserves_prim(reserves)$sum( (n,reserves_up_down,reserves_spin_nonspin,headers_reserves), reserves_data_upload(n,reserves,reserves_up_down,reserves_spin_nonspin,'prim',headers_reserves)) = yes;
+reserves_nonprim(reserves)$sum( (n,reserves_up_down,reserves_spin_nonspin,headers_reserves), reserves_data_upload(n,reserves,reserves_up_down,reserves_spin_nonspin,'nonprim',headers_reserves)) = yes;
+
+reserves_prim_up(reserves)$sum( (n,reserves_spin_nonspin,headers_reserves), reserves_data_upload(n,reserves,'up',reserves_spin_nonspin,'prim',headers_reserves)) = yes;
+reserves_prim_do(reserves)$sum( (n,reserves_spin_nonspin,headers_reserves), reserves_data_upload(n,reserves,'do',reserves_spin_nonspin,'prim',headers_reserves)) = yes;
+reserves_nonprim_up(reserves)$sum( (n,reserves_spin_nonspin,headers_reserves), reserves_data_upload(n,reserves,'up',reserves_spin_nonspin,'nonprim',headers_reserves)) = yes;
+reserves_nonprim_do(reserves)$sum( (n,reserves_spin_nonspin,headers_reserves), reserves_data_upload(n,reserves,'do',reserves_spin_nonspin,'nonprim',headers_reserves)) = yes;
+
+hst(ch)$sum( (n,bu,heat_hp,heat_elec,heat_fossil,headers_heat), heat_data_upload(n,bu,ch,'yes',heat_hp,heat_elec,heat_fossil,headers_heat)) = yes;
+hp(ch)$sum( (n,bu,heat_storage,heat_elec,heat_fossil,headers_heat), heat_data_upload(n,bu,ch,heat_storage,'yes',heat_elec,heat_fossil,headers_heat)) = yes;
+
+hel(ch)$sum( (n,bu,heat_storage,heat_hp,heat_fossil,headers_heat), heat_data_upload(n,bu,ch,heat_storage,heat_hp,'yes',heat_fossil,headers_heat)) = yes;
+hfo(ch)$sum( (n,bu,heat_storage,heat_hp,heat_elec,headers_heat), heat_data_upload(n,bu,ch,heat_storage,heat_hp,heat_elec,'yes',headers_heat)) = yes;
+
+*hye(ch)$sum( (n,bu,heat_storage,heat_hp,headers_heat), heat_data_upload(n,bu,ch,heat_storage,heat_hp,'yes',headers_heat)) = yes;
+
+
+
+***** Parameters *****
+
+*--- Generation technologies ---*
+technology_data(n,tech,headers_tech) = sum((tech_res_con,tech_dispatch), technology_data_upload(n,tech,tech_res_con,tech_dispatch,headers_tech)) ;
+eta(n,tech) = technology_data(n,tech,'eta_con') ;
+carbon_content(n,tech) = technology_data(n,tech,'carbon_content') ;
+c_up(n,dis) =technology_data(n,dis,'load change costs up') ;
+c_do(n,dis) = technology_data(n,dis,'load change costs down') ;
+c_fix(n,tech) = technology_data(n,tech,'fixed_costs') ;
+c_vom(n,tech) = technology_data(n,tech,'variable_om') ;
+CO2price(n,tech) = technology_data(n,tech,'CO2_price') ;
+
+c_inv_overnight(n,tech) = technology_data(n,tech,'oc') ;
+lifetime(n,tech) = technology_data(n,tech,'lifetime') ;
+recovery(n,tech) = technology_data(n,tech,'recovery_period') ;
+interest_rate(n,tech) = technology_data(n,tech,'interest_rate') ;
+m_p(n,tech) = technology_data(n,tech,'max_installable') ;
+m_e(n,tech) = technology_data(n,tech,'max_energy') ;
+grad_per_min(n,dis) = technology_data(n,dis,'load change flexibility') ;
+fuelprice(n,tech) = technology_data(n,tech,'fuel costs') ;
+
+c_cu(n,res) = technology_data(n,res,'curtailment_costs') ;
+
+
+*--- Storage technologies ---*
+c_m_sto(n,sto) = storage_data(n,sto,'mc');
+eta_sto(n,sto) = storage_data(n,sto,'efficiency');
+c_fix_sto(n,sto) = storage_data(n,sto,'fixed_costs');
+phi_sto_ini(n,sto) = storage_data(n,sto,'level_start');
+etop_max(n,sto) = storage_data(n,sto,'etop_max') ;
+
+c_inv_overnight_sto_e(n,sto) = storage_data(n,sto,'oc_energy');
+c_inv_overnight_sto_p(n,sto) = storage_data(n,sto,'oc_capacity');
+lifetime(n,sto) = storage_data(n,sto,'lifetime');
+interest_rate(n,sto) = storage_data(n,sto,'interest_rate');
+m_sto_e(n,sto) = storage_data(n,sto,'max_energy');
+m_sto_p(n,sto) = storage_data(n,sto,'max_power');
+
+
+*--- Reservoir technologies ---*
+c_m_rsvr(n,rsvr) = reservoir_data(n,rsvr,'mc');
+eta_rsvr(n,rsvr) = reservoir_data(n,rsvr,'efficiency');
+c_fix_rsvr(n,rsvr) = reservoir_data(n,rsvr,'fixed_costs');
+phi_rsvr_ini(n,rsvr) = reservoir_data(n,rsvr,'level_start');
+phi_rsvr_lev_min(n,rsvr) = reservoir_data(n,rsvr,'level_min');
+
+c_inv_overnight_rsvr_e(n,rsvr) = reservoir_data(n,rsvr,'oc_energy');
+c_inv_overnight_rsvr_p(n,rsvr) = reservoir_data(n,rsvr,'oc_capacity');
+inv_lifetime_rsvr(n,rsvr) = reservoir_data(n,rsvr,'lifetime');
+inv_interest_rsvr(n,rsvr) = reservoir_data(n,rsvr,'interest_rate');
+m_rsvr_e(n,rsvr) = reservoir_data(n,rsvr,'max_energy');
+m_rsvr_p(n,rsvr) = reservoir_data(n,rsvr,'max_power');
+
+
+*--- DSM technologies ---*
+dsm_curt(dsm)$sum( (n,dsm_type,headers_dsm), dsm_data_upload(n,dsm,'curt',headers_dsm)) = yes;
+dsm_shift(dsm)$sum( (n,dsm_type,headers_dsm), dsm_data_upload(n,dsm,'shift',headers_dsm)) = yes;
+dsm_data(n,dsm,headers_dsm) = sum(dsm_type, dsm_data_upload(n,dsm,dsm_type,headers_dsm) ) ;
+
+c_m_dsm_cu(n,dsm_curt) = dsm_data(n,dsm_curt,'mc')     ;
+c_m_dsm_shift(n,dsm_shift) = dsm_data(n,dsm_shift,'mc')  ;
+c_fix_dsm_cu(n,dsm_curt) = dsm_data(n,dsm_curt,'fc')  ;
+c_fix_dsm_shift(n,dsm_shift) = dsm_data(n,dsm_shift,'fc') ;
+
+t_dur_dsm_cu(n,dsm_curt) = dsm_data(n,dsm_curt,'max_duration')   ;
+t_off_dsm_cu(n,dsm_curt) = dsm_data(n,dsm_curt,'recovery_time')   ;
+t_dur_dsm_shift(n,dsm_shift) = dsm_data(n,dsm_shift,'max_duration')   ;
+t_off_dsm_shift(n,dsm_shift) = dsm_data(n,dsm_shift,'recovery_time')   ;
+eta_dsm_shift(n,dsm_shift)  = dsm_data(n,dsm_shift,'efficiency')   ;
+
+c_inv_overnight_dsm_cu(n,dsm_curt) =  dsm_data(n,dsm_curt,'oc')   ;
+c_inv_overnight_dsm_shift(n,dsm_shift)  =  dsm_data(n,dsm_shift,'oc')   ;
+inv_recovery_dsm_cu(n,dsm_curt)  =  dsm_data(n,dsm_curt,'lifetime')   ;
+inv_recovery_dsm_shift(n,dsm_shift)   =  dsm_data(n,dsm_shift,'lifetime')   ;
+inv_interest_dsm_cu(n,dsm_curt)   =  dsm_data(n,dsm_curt,'interest_rate')   ;
+inv_interest_dsm_shift(n,dsm_shift)  =  dsm_data(n,dsm_shift,'interest_rate')   ;
+m_dsm_cu(n,dsm_curt) =  dsm_data(n,dsm_curt,'max_installable')   ;
+m_dsm_shift(n,dsm_shift) =  dsm_data(n,dsm_shift,'max_installable')   ;
+
+
+*--- Temporal data ---*
+d_y(n,year,h) = time_data_upload(h,n,year,'demand')  ;
+phi_res_y(n,year,res,h) = sum(headers_time$(sameas(res,headers_time)), time_data_upload(h,n,year,headers_time));
+rsvr_in_y(n,year,rsvr,h) = sum(headers_time$(sameas(rsvr,headers_time)), time_data_upload(h,n,year,headers_time));
+phi_reserves_call_y(n,year,reserves,h) = reserves_time_data_activation(h,year,reserves) ;
+reserves_exogenous_y(n,year,reserves,h) = reserves_time_data_provision(h,year,reserves) ;
+
+
+*--- Spatial data ---*
+inv_lifetime_ntc(l) = topology_data(l,'lifetime') ;
+inv_recovery_ntc(l) = topology_data(l,'recovery_period') ;
+inv_interest_ntc(l) = topology_data(l,'interest_rate') ;
+c_inv_overnight_ntc(l) = topology_data(l,'overnight_costs') ;
+c_fix_ntc(l) = topology_data(l,'fixed_costs') ;
+m_ntc(l) = topology_data(l,'max_installable') ;
+dist(l) = topology_data(l,'distance') ;
+
+
+*--- Electric vehicles ---*
+c_m_ev(n,ev) = ev_data(n,ev,'mc') ;
+pen_phevfuel(n,ev) = ev_data(n,ev,'penalty_fuel') ;
+eta_ev_in(n,ev) = ev_data(n,ev,'efficiency_charge') ;
+eta_ev_out(n,ev) = ev_data(n,ev,'efficiency_discharge') ;
+phi_ev_ini(n,ev) = ev_data(n,ev,'ev_start') ;
+
+n_ev_e(n,ev) = ev_data(n,ev,'ev_capacity') ;
+phi_ev(n,ev) = ev_data(n,ev,'share_ev') ;
+ev_phev(n,ev) = ev_data(n,ev,'ev_type') ;
+
+n_ev_p(n,ev,h) = ev_time_data_upload(h,'n_ev_p',ev) ;
+ev_ed(n,ev,h) = ev_time_data_upload(h,'ev_ed',ev) ;
+ev_ged_exog(n,ev,h) = ev_time_data_upload(h,'ev_ged_exog',ev) ;
+
+
+*--- Prosumage ---*
+m_res_pro(n,res) = prosumage_data_generation(n,res,'max_power') ;
+m_sto_pro_e(n,sto) = prosumage_data_storage(n,sto,'max_energy') ;
+m_sto_pro_p(n,sto) = prosumage_data_storage(n,sto,'max_power') ;
+phi_sto_pro_ini(n,sto) = prosumage_data_storage(n,sto,'level_start') ;
+
+
+*--- Reserves ---*
+reserves_data(n,reserves,headers_reserves) = sum((reserves_up_down,reserves_spin_nonspin,reserves_prim_nonprim), reserves_data_upload(n,reserves,reserves_up_down,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)) ;
+phi_reserves_share(n,reserves) = reserves_data(n,reserves,'share_sr_mr') ;
+reserves_intercept(n,reserves) = reserves_data(n,reserves,'intercept') ;
+reserves_slope(n,reserves,'wind_on') = reserves_data(n,reserves,'slope_wind_on') ;
+reserves_slope(n,reserves,'wind_off') = reserves_data(n,reserves,'slope_wind_off') ;
+reserves_slope(n,reserves,'pv') = reserves_data(n,reserves,'slope_pv') ;
+reserves_reaction(n,reserves) = reserves_data(n,reserves,'reaction_time') ;
+phi_reserves_pr_up(n) = reserves_data(n,'PR_up','fraction_pr') ;
+phi_reserves_pr_do(n) = reserves_data(n,'PR_do','fraction_pr') ;
+*reserves_exog(n,reserves) = reserves_data(n,reserves,'fixed_reserves') ;
+*reserves_exog(n,'PR_up') = reserves_data(n,'PR_up','fixed_reserves') ;
+*reserves_exog(n,'PR_do') = reserves_data(n,'PR_do','fixed_reserves') ;
+*reserves_exog(n,'SR_up') = reserves_data(n,'SR_up','fixed_reserves') ;
+*reserves_exog(n,'SR_do') = reserves_data(n,'SR_do','fixed_reserves') ;
+*reserves_exog(n,'MR_up') = reserves_data(n,'MR_up','fixed_reserves') ;
+*reserves_exog(n,'MR_do') = reserves_data(n,'MR_do','fixed_reserves') ;
+
+
+*--- Heat ---*
+heat_data(n,bu,ch,headers_heat) = sum((heat_storage,heat_hp,heat_elec,heat_fossil), heat_data_upload(n,bu,ch,heat_storage,heat_hp,heat_elec,heat_fossil,headers_heat)) ;
+phi_heat_type(n,bu,ch) = heat_data(n,bu,ch,'share') ;
+dh_y(n,year,bu,ch,h) = phi_heat_type(n,bu,ch) * dh_upload(h,n,year,'demand',bu) ;
+d_dhw_y(n,year,bu,ch,h) = phi_heat_type(n,bu,ch) * d_dhw_upload(h,n,year,'demand',bu) ;
+
+eta_heat_stat(n,bu,ch) = heat_data(n,bu,ch,'static_efficiency') ;
+eta_heat_dyn(n,bu,ch) = heat_data(n,bu,ch,'dynamic_efficiency') ;
+eta_dhw_aux_stat(n,bu,ch) = heat_data(n,bu,ch,'static_efficiency_sets_aux_dhw') ;
+* currently not used
+n_heat_p_in(n,bu,ch) = heat_data(n,bu,ch,'max_power') ;
+n_heat_p_out(n,bu,ch) = heat_data(n,bu,ch,'max_outflow') ;
+n_heat_e(n,bu,ch) = heat_data(n,bu,ch,'max_level') ;
+n_sets_p_in(n,bu,ch) = heat_data(n,bu,ch,'max_power') ;
+n_sets_p_out(n,bu,ch) = heat_data(n,bu,ch,'max_outflow') ;
+n_sets_e(n,bu,ch) = heat_data(n,bu,ch,'max_level') ;
+n_sets_dhw_p_in(n,bu,ch) = heat_data(n,bu,ch,'max_power_in_sets_aux_dhw') ;
+n_sets_dhw_p_out(n,bu,ch) = heat_data(n,bu,ch,'max_power_out_sets_aux_dhw') ;
+n_sets_dhw_e(n,bu,ch) = heat_data(n,bu,ch,'max_energy_sets_aux_dhw') ;
+phi_heat_ini(n,bu,ch) = heat_data(n,bu,ch,'level_ini') ;
+temp_sink(n,bu,ch) = heat_data(n,bu,ch,'temperature_sink') ;
+
+temp_source(n,bu,'hp_as',h) = temp_source_upload(h,n,'hp_as') ;
+temp_source(n,bu,'hp_gs',h) = heat_data(n,bu,'hp_gs','temperature_source') ;
+
+temp_source(n,bu,'gas_hp_gs',h) = heat_data(n,bu,'gas_hp_gs','temperature_source') ;
+temp_source(n,bu,'hp_gs_elec',h) = heat_data(n,bu,'hp_gs_elec','temperature_source') ;
+
+pen_heat_fuel(n,bu,ch) = heat_data(n,bu,ch,'penalty_non-electric_heat_supply') ;
+
+area_floor(n,bu,ch) = heat_data(n,bu,ch,'area_floor') ;
+
+
+
+***************  CALCULATE DERIVED PARAMETERS  *********************************
+
+c_m(n,tech) = fuelprice(n,tech)/eta(n,tech) + carbon_content(n,tech)/eta(n,tech)*CO2price(n,tech) + c_vom(n,tech)   ;
+
+c_i(n,tech) = c_inv_overnight(n,tech)*( interest_rate(n,tech) * (1+interest_rate(n,tech))**(lifetime(n,tech)) )
+                  / ( (1+interest_rate(n,tech))**(lifetime(n,tech))-1 )       ;
+
+c_i_res(n,res) = c_i(n,res) ;
+c_fix_res(n,res) = c_fix(n,res) ;
+
+c_i_sto_e(n,sto) = c_inv_overnight_sto_e(n,sto)*( interest_rate(n,sto) * (1+interest_rate(n,sto))**(lifetime(n,sto)) )
+                 / ( (1+interest_rate(n,sto))**(lifetime(n,sto))-1 )       ;
+
+c_i_sto_p(n,sto) = c_inv_overnight_sto_p(n,sto)*( interest_rate(n,sto) * (1+interest_rate(n,sto))**(lifetime(n,sto)) )
+                 / ( (1+interest_rate(n,sto))**(lifetime(n,sto))-1 )       ;
+
+c_i_rsvr_e(n,rsvr) = c_inv_overnight_rsvr_e(n,rsvr)*( inv_interest_rsvr(n,rsvr) * (1+inv_interest_rsvr(n,rsvr))**(inv_lifetime_rsvr(n,rsvr)) )
+                 / ( (1+inv_interest_rsvr(n,rsvr))**(inv_lifetime_rsvr(n,rsvr))-1 )       ;
+
+c_i_rsvr_p(n,rsvr) = c_inv_overnight_rsvr_p(n,rsvr)*( inv_interest_rsvr(n,rsvr) * (1+inv_interest_rsvr(n,rsvr))**(inv_lifetime_rsvr(n,rsvr)) )
+                 / ( (1+inv_interest_rsvr(n,rsvr))**(inv_lifetime_rsvr(n,rsvr))-1 )       ;
+
+c_i_dsm_cu(n,dsm_curt) =c_inv_overnight_dsm_cu(n,dsm_curt)*( inv_interest_dsm_cu(n,dsm_curt) * (1+inv_interest_dsm_cu(n,dsm_curt))**(inv_recovery_dsm_cu(n,dsm_curt)) )
+                 / ( (1+inv_interest_dsm_cu(n,dsm_curt))**(inv_recovery_dsm_cu(n,dsm_curt))-1 )       ;
+
+c_i_dsm_shift(n,dsm_shift) = c_inv_overnight_dsm_shift(n,dsm_shift)*( inv_interest_dsm_shift(n,dsm_shift) * (1+inv_interest_dsm_shift(n,dsm_shift))**(inv_recovery_dsm_shift(n,dsm_shift)) )
+                 / ( (1+inv_interest_dsm_shift(n,dsm_shift))**(inv_recovery_dsm_shift(n,dsm_shift))-1 )       ;
+
+c_i_ntc(l) = c_inv_overnight_ntc(l) * (inv_interest_ntc(l) * (1 + inv_interest_ntc(l))**(inv_lifetime_ntc(l)) )
+                 / ((1 + inv_interest_ntc(l)) ** (inv_lifetime_ntc(l))-1 ) ;
+
+phi_mean_reserves_call_y(n,year,reserves) = sum(h, phi_reserves_call_y(n,year,reserves,h) ) / card(h) + eps ;
+
+
+theta_sets(n,bu,'setsh')$(smax( (heat_storage,heat_hp,heat_elec,heat_fossil,headers_heat) , heat_data_upload(n,bu,'setsh',heat_storage,heat_hp,heat_elec,heat_fossil,headers_heat)) > 0 AND phi_heat_type(n,bu,'setsh')) = 1;
+theta_dir(n,bu,'dir')$(smax((heat_storage,heat_hp,heat_elec,heat_fossil,headers_heat) , heat_data_upload(n,bu,'dir',heat_storage,heat_hp,heat_elec,heat_fossil,headers_heat)) > 0 AND phi_heat_type(n,bu,'dir')) = 1;
+
+theta_storage(n,bu,ch)$(sum((heat_hp,heat_elec,heat_fossil,headers_heat), heat_data_upload(n,bu,ch,'yes',heat_hp,heat_elec,heat_fossil,headers_heat)) AND phi_heat_type(n,bu,ch)) = 1;
+theta_hp(n,bu,ch)$sum( (heat_storage,heat_elec,heat_fossil,headers_heat), heat_data_upload(n,bu,ch,heat_storage,'yes',heat_elec,heat_fossil,headers_heat) AND phi_heat_type(n,bu,ch)) = 1;
+
+theta_elec(n,bu,ch)$sum( (heat_storage,heat_hp,heat_fossil,headers_heat), heat_data_upload(n,bu,ch,heat_storage,heat_hp,'yes',heat_fossil,headers_heat) AND phi_heat_type(n,bu,ch)) = 1;
+theta_fossil(n,bu,ch)$sum( (heat_storage,heat_hp,heat_elec,headers_heat), heat_data_upload(n,bu,ch,heat_storage,heat_hp,heat_elec,'yes',headers_heat) AND phi_heat_type(n,bu,ch)) = 1;
+
+
+
+***************  Adjust costs to model's hourly basis **************************
+
+c_i(n,tech) = c_i(n,tech)*card(h)/8760 ;
+c_i_res(n,tech) = c_i_res(n,tech)*card(h)/8760 ;
+c_i_sto_p(n,sto) = c_i_sto_p(n,sto)*card(h)/8760 ;
+c_i_sto_e(n,sto) = c_i_sto_e(n,sto)*card(h)/8760 ;
+c_i_rsvr_e(n,rsvr) = c_i_rsvr_e(n,rsvr)*card(h)/8760 ;
+c_i_rsvr_p(n,rsvr) = c_i_rsvr_p(n,rsvr)*card(h)/8760 ;
+c_i_dsm_cu(n,dsm_curt) = c_i_dsm_cu(n,dsm_curt)*card(h)/8760 ;
+c_i_dsm_shift(n,dsm_shift) = c_i_dsm_shift(n,dsm_shift)*card(h)/8760 ;
+
+c_fix(n,tech) = c_fix(n,tech)*card(h)/8760 ;
+c_fix_sto(n,sto) = c_fix_sto(n,sto)*card(h)/8760 ;
+c_fix_dsm_cu(n,dsm_curt) = c_fix_dsm_cu(n,dsm_curt)*card(h)/8760 ;
+c_fix_dsm_shift(n,dsm_shift) = c_fix_dsm_shift(n,dsm_shift)*card(h)/8760 ;
+c_fix_rsvr(n,rsvr) = c_fix_rsvr(n,rsvr)*card(h)/8760 ;
+
+m_e(n,'bio') = m_e(n,'bio')*card(h)/8760 ;
+
+c_i_ntc(l) = c_i_ntc(l) * card(h)/8760 ;
+
+*t_dur_dsm_cu(n,dsm_curt) = t_dur_dsm_cu(n,dsm_curt) ;
+*t_off_dsm_cu(n,dsm_curt) = t_off_dsm_cu(n,dsm_curt) ;
+*t_dur_dsm_shift(n,dsm_shift)$(ord(dsm_shift)=2 or ord(dsm_shift)=4 or ord(dsm_shift)=5) = t_dur_dsm_shift(n,dsm_shift) / 2 ;
+*t_dur_dsm_shift(n,dsm_shift)$(ord(dsm_shift)=1 or ord(dsm_shift)=3) = 2 ;
+
+
+
+***************  Check for parameter sanity ************************************
+
+Parameter
+check_heat
+check_heat_agg ;
+check_heat(n,bu) = sum( ch , phi_heat_type(n,bu,ch)) ;
+check_heat_agg = smax( (n,bu) , check_heat(n,bu) ) ;
+*abort$(check_heat_agg > 1) "DATA: heating technologies for a building type do not add up to 100 percent" ;
+
+
+
+
+***************  Infeasibility *************************************************
+
+Positive variable
+G_INFES(n,h)
+;
+
+Parameter
+c_infes  /100000/
+;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
