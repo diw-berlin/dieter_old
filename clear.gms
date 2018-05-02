@@ -2,12 +2,11 @@
 ********************************************************************************
 $ontext
 The Dispatch and Investment Evaluation Tool with Endogenous Renewables (DIETER).
-Version 1.0.2, January 2016.
-Written by Alexander Zerrahn and Wolf-Peter Schill.
+Version 1.1.0, February 2016.
+Written by Alexander Zerrahn and Wolf-Peter Schill. Moritz Niemeyer contributed to electric vehicle modeling.
 This work is licensed under the MIT License (MIT).
 For more information on this license, visit http://opensource.org/licenses/mit-license.php.
 Whenever you use this code, please refer to http://www.diw.de/dieter.
-This version constitutes a minor revision of the model documented in Zerrahn, A., Schill, W.-P. (2015): A greenfield model to evaluate long-run power storage requirements for high shares of renewables. DIW Discussion Paper 1457. http://www.diw.de/documents/publikationen/73/diw_01.c.498475.de/dp1457.pdf
 We are happy to receive feedback under azerrahn@diw.de and wschill@diw.de.
 $offtext
 ********************************************************************************
@@ -31,6 +30,12 @@ option clear = STO_IN ;
 option clear = STO_OUT ;
 option clear = STO_L ;
 
+option clear = EV_CHARGE ;
+option clear = EV_DISCHARGE ;
+option clear = EV_L ;
+option clear = EV_PHEVFUEL ;
+option clear = EV_GED ;
+
 option clear = N_CON ;
 option clear = N_RES ;
 option clear = N_STO_E ;
@@ -49,6 +54,8 @@ option clear = RP_CON ;
 option clear = RP_RES ;
 option clear = RP_STO_IN ;
 option clear = RP_STO_OUT ;
+option clear = RP_EV_V2G ;
+option clear = RP_EV_G2V ;
 option clear = RP_DSM_CU ;
 option clear = RP_DSM_SHIFT ;
 
@@ -80,6 +87,23 @@ option clear = con8a_max_I_con ;
 option clear = con8b_max_I_res ;
 option clear = con8c_max_I_sto_e ;
 option clear = con8d_max_I_sto_p ;
+
+
+%reserves%$ontext
+%EV%$ontext
+option clear = con11a_ev_ed ;
+option clear = con11b_ev_chargelev_start ;
+option clear = con11c_ev_chargelev ;
+option clear = con11d_ev_chargelev_max ;
+option clear = con11e_ev_maxin ;
+option clear = con11f_ev_maxout ;
+option clear = con11g_ev_chargelev_ending ;
+option clear = con11h_ev_minin ;
+option clear = con11i_ev_maxin_lev ;
+option clear = con11j_ev_minout ;
+option clear = con11k_ev_maxout_lev ;
+$ontext
+$offtext
 
 %DSM%$ontext
 option clear = con6a_DSMcurt_duration_max ;

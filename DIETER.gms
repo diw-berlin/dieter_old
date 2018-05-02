@@ -2,12 +2,11 @@
 ********************************************************************************
 $ontext
 The Dispatch and Investment Evaluation Tool with Endogenous Renewables (DIETER).
-Version 1.0.2, January 2016.
-Written by Alexander Zerrahn and Wolf-Peter Schill.
+Version 1.1.0, February 2016.
+Written by Alexander Zerrahn and Wolf-Peter Schill. Moritz Niemeyer contributed to electric vehicle modeling.
 This work is licensed under the MIT License (MIT).
 For more information on this license, visit http://opensource.org/licenses/mit-license.php.
 Whenever you use this code, please refer to http://www.diw.de/dieter.
-This version constitutes a minor revision of the model documented in Zerrahn, A., Schill, W.-P. (2015): A greenfield model to evaluate long-run power storage requirements for high shares of renewables. DIW Discussion Paper 1457. http://www.diw.de/documents/publikationen/73/diw_01.c.498475.de/dp1457.pdf
 We are happy to receive feedback under azerrahn@diw.de and wschill@diw.de.
 $offtext
 ********************************************************************************
@@ -24,13 +23,14 @@ $setglobal write_to_excel "*"
 
 * Set star to activate options
 $setglobal DSM "*"
+$setglobal EV "*"
 $setglobal reserves "*"
 
 * Set star to select run-of-river options either as a simple exogenous parameter or as an endogenous variable including reserve provision:
 * if nothing is selected, ROR capacity will be set to zero
 * if parameter option is selected, set appropriate values in fix.gmx
 * if variable option is selected, set appropriate bound in data_input excel
-$setglobal ror_parameter ""
+$setglobal ror_parameter "*"
 $setglobal ror_variable ""
 
 * Set star to determine loops
@@ -86,6 +86,7 @@ year      yearly time data                       /2011, 2012, 2013, 2013_windons
 ct        Conventional Technologies              /ror, nuc, lig, hc, CCGT, OCGT_eff, OCGT_ineff, bio/
 res       Renewable technologies                 /Wind_on, Wind_off, Solar/
 sto       Storage technolgies                    /Sto1*Sto7/
+ev        Set of 28 EV profiles                  /ev1*ev28/
 dsm_shift DSM shifting technologies              /DSM_shift1*DSM_shift5/
 dsm_curt  Set of load curtailment technologies   /DSM_curt1*DSM_curt3/
 reserves  Set of reserve qualities               /PR_up, PR_do, SR_up, SR_do, MR_up, MR_do/
@@ -126,6 +127,12 @@ STO_IN(sto,h)    Storage inflow technology sto hour h in MWh
 STO_OUT(sto,h)   Storage outflow technology sto hour h in MWh
 STO_L(sto,h)     Storage level technology sto hour h in MWh
 
+EV_CHARGE(ev,h)		Electric vehicle charging vehicle profile ev hour h in MWh
+EV_DISCHARGE(ev,h)	Electric vehicle discharging vehicle profile ev hour h in MWh
+EV_L(ev,h)			Electric vehicle charging level vehicle profile ev hour h in MWh
+EV_PHEVFUEL(ev,h)	Plug in hybrid electric vehicle conventional fuel use vehicle profile ev hour h in MWh
+EV_GED(ev,h)		Grid electricity demand for mobility vehicle profile ev hour h in MWh
+
 N_CON(ct)        Conventional technology ct built in MW
 N_RES(res)       Renewable technology built in MW
 N_STO_E(sto)     Storage technology built - Energy in MWh
@@ -145,6 +152,8 @@ RP_CON(reserves,ct,h)                     Reserve provision by conventionals in 
 RP_RES(reserves,res,h)                    Reserve provision by renewables in hour h in MW
 RP_STO_IN(reserves,sto,h)                 Reserve provision by storage in in hour h in MW
 RP_STO_OUT(reserves,sto,h)                Reserve provision by storage out in hour h in MW
+RP_EV_V2G(reserves,ev,h)                  Reserve provision by electric vehicles V2G hour h in MW
+RP_EV_G2V(reserves,ev,h)                  Reserve provision by electric vehicles G2V hour h in MW
 RP_DSM_CU(reserves,dsm_curt,h)            Reserve provision by DSM load curtailment in hour h in MW
 RP_DSM_SHIFT(reserves,dsm_shift,h)        Reserve provision by DSM load shifting in hour h in MW
 ;
@@ -157,7 +166,7 @@ Equations
 obj                      Objective cost minimization
 
 * Energy balance
-con1a_bal                Supply Demand Balance in case of cost minimization
+con1a_bal                Supply Demand Balance
 
 * Load change costs
 con2a_loadlevel          Load change costs: Level
@@ -221,6 +230,18 @@ con8f_max_I_dsm_shift_pos       Maximum installable capacity: DSM load shifting
 * Reserves
 con10a_reserve_prov             Reserve provision SR and MR
 con10b_reserve_prov_PR          Reserve provision PR
+* Electric vehicles
+con11a_ev_ed              Energy balance of electric vehicles
+con11b_ev_chargelev_start   Cumulative charging level in the first hour
+con11c_ev_chargelev         Cumulative charging level in hour h
+con11d_ev_chargelev_max     Cumulative maximal charging level
+con11e_ev_maxin             Cumulative maximal charging power
+con11f_ev_maxout            Cumulative maximal discharging power
+con11g_ev_chargelev_ending  Cumulative charging level in the last hour
+con11h_ev_minin             Cumulative minimal charging power
+con11i_ev_maxin_lev         Cumulative maximal charging limit
+con11j_ev_minout            Cumulative minimal discharging power
+con11k_ev_maxout_lev        Cumulative maximal discharging limit
 ;
 
 
@@ -241,6 +262,11 @@ obj..
                  + sum( (dsm_curt,h) , c_m_dsm_cu(dsm_curt)*DSM_CU(dsm_curt,h) )
                  + sum( (dsm_shift,h) , c_m_dsm_shift(dsm_shift) * DSM_UP_DEMAND(dsm_shift,h) )
                  + sum( (dsm_shift,h) , c_m_dsm_shift(dsm_shift) * DSM_DO_DEMAND(dsm_shift,h) )
+$ontext
+$offtext
+%EV%$ontext
+                 + sum( (ev,h) , c_m_ev(ev) * EV_DISCHARGE(ev,h) )
+                 + sum( (ev,h) , pen_phevfuel * EV_PHEVFUEL(ev,h) )
 $ontext
 $offtext
                  + sum( ct , c_i(ct)*N_CON(ct) )
@@ -266,6 +292,12 @@ $offtext
                  - sum( (reserves,sto,h)$(ord(reserves) = 2 or ord(reserves) = 4 or ord(reserves) = 6) , RP_STO_OUT(reserves,sto,h)* phi_reserves_call(reserves,h) * c_m_sto(sto) )
 $ontext
 $offtext
+%reserves%$ontext
+%EV%$ontext
+                 + sum( (reserves,ev,h)$(ord(reserves) = 1 or ord(reserves) = 3 or ord(reserves) = 5) , RP_EV_V2G(reserves,ev,h)* phi_reserves_call(reserves,h) * c_m_ev(ev) )
+                 - sum( (reserves,ev,h)$(ord(reserves) = 2 or ord(reserves) = 4 or ord(reserves) = 6) , RP_EV_V2G(reserves,ev,h)* phi_reserves_call(reserves,h) * c_m_ev(ev) )
+$ontext
+$offtext
 %DSM%$ontext
 %reserves%$ontext
                  + sum( (reserves,dsm_curt,h)$(ord(reserves) = 3 or ord(reserves) = 5) , RP_DSM_CU(reserves,dsm_curt,h) * phi_reserves_call(reserves,h) * c_m_dsm_cu(dsm_curt) )
@@ -286,6 +318,10 @@ con1a_bal(hh)..
          + sum( dsm_shift , DSM_UP_DEMAND(dsm_shift,hh) )
 $ontext
 $offtext
+%EV%$ontext
+         + sum( ev , EV_CHARGE(ev,hh) )
+$ontext
+$offtext
          =E=
          sum( ct , G_L(ct,hh)) + sum( res , G_RES(res,hh)) + sum( sto , STO_OUT(sto,hh) )
 %reserves%$ontext
@@ -302,6 +338,10 @@ $offtext
 %DSM%$ontext
          + sum(dsm_curt, DSM_CU(dsm_curt,hh))
          + sum(dsm_shift, DSM_DO_DEMAND(dsm_shift,hh))
+$ontext
+$offtext
+%EV%$ontext
+        + sum( ev , EV_DISCHARGE(ev,hh) )
 $ontext
 $offtext
 ;
@@ -568,6 +608,10 @@ sum( ct$(ord(ct) > 1 AND ord(ct) < card(ct)) , sum( h , G_L(ct,h) ) )
          - sum( dsm_curt , DSM_CU(dsm_curt,h) )
 $ontext
 $offtext
+%EV%$ontext
+        + sum( ev , EV_CHARGE(ev,h) - EV_DISCHARGE(ev,h) )
+$ontext
+$offtext
 %reserves%$ontext
         + phi_mean_reserves_call('PR_up') * phi_reserves_pr* sum( reserves$( ord(reserves) > 2) , 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum( res , reserves_slope(reserves,res) * N_RES(res)/1000 ) ) )
         + phi_mean_reserves_call('SR_up') *( 1000 * phi_reserves_share('SR_up') * (reserves_intercept('SR_up') + sum( res , reserves_slope('SR_up',res) * N_RES(res)/1000 ) ) )
@@ -588,6 +632,22 @@ $offtext
        - sum( dsm_curt , RP_DSM_CU('SR_up',dsm_curt,h) * phi_reserves_call('SR_up',h) )
        - sum( dsm_curt , RP_DSM_CU('MR_up',dsm_curt,h) * phi_reserves_call('MR_up',h) )
 * ## Correction required in case eta_dsm_shift < 1
+$ontext
+$offtext
+%reserves%$ontext
+%EV%$ontext
+       + sum( ev , RP_EV_G2V('PR_do',ev,h)* phi_reserves_call('PR_do',h)
+         + RP_EV_G2V('SR_do',ev,h)* phi_reserves_call('SR_do',h)
+         + RP_EV_G2V('MR_do',ev,h)* phi_reserves_call('MR_do',h)
+         - RP_EV_G2V('PR_up',ev,h)* phi_reserves_call('PR_up',h)
+         - RP_EV_G2V('SR_up',ev,h)* phi_reserves_call('SR_up',h)
+         - RP_EV_G2V('MR_up',ev,h)* phi_reserves_call('MR_up',h)
+         - RP_EV_V2G('PR_up',ev,h)* phi_reserves_call('PR_up',h)
+         - RP_EV_V2G('SR_up',ev,h)* phi_reserves_call('SR_up',h)
+         - RP_EV_V2G('MR_up',ev,h)* phi_reserves_call('MR_up',h)
+         + RP_EV_V2G('PR_do',ev,h)* phi_reserves_call('PR_do',h)
+         + RP_EV_V2G('SR_do',ev,h)* phi_reserves_call('SR_do',h)
+         + RP_EV_V2G('MR_do',ev,h)* phi_reserves_call('MR_do',h)  )
 $ontext
 $offtext
 )
@@ -707,6 +767,10 @@ con10a_reserve_prov(reserves,h)$( ord(reserves) > 2)..
         + sum(dsm_shift , RP_DSM_SHIFT(reserves,dsm_shift,h) )
 $ontext
 $offtext
+%EV%$ontext
+        + sum(ev, RP_EV_G2V(reserves,ev,h) + RP_EV_V2G(reserves,ev,h) )
+$ontext
+$offtext
         =E= (
             1000 * phi_reserves_share(reserves) * (
             reserves_intercept(reserves) + sum( res , reserves_slope(reserves,res) * N_RES(res)/1000 ) ) )$(ord(h) > 1)
@@ -716,8 +780,101 @@ con10b_reserve_prov_PR(reserves,h)$( ord(reserves) < 3)..
         sum(ct, RP_CON(reserves,ct,h))
         + sum(res, RP_RES(reserves,res,h))
         + sum(sto, RP_STO_IN(reserves,sto,h) + RP_STO_OUT(reserves,sto,h) )
+%EV%$ontext
+        + sum(ev, RP_EV_G2V(reserves,ev,h) + RP_EV_V2G(reserves,ev,h) )
+$ontext
+$offtext
          =E= phi_reserves_pr* sum( reservesreserves$( ord(reservesreserves) > 2), 1000 * phi_reserves_share(reservesreserves) * (
             reserves_intercept(reservesreserves) + sum( res , reserves_slope(reservesreserves,res) * N_RES(res)/1000 ) ) )$(ord(h) > 1)
+;
+
+* ---------------------------------------------------------------------------- *
+***** Electric vehicle constraints *****
+* ---------------------------------------------------------------------------- *
+
+con11a_ev_ed(ev,h)..
+         ev_ed(ev,h)*ev_quant(ev)
+         =e= EV_GED(ev,h) + EV_PHEVFUEL(ev,h)$(ev_phev(ev)=1)
+;
+
+con11b_ev_chargelev_start(ev,'h1')..
+         EV_L(ev,'h1') =E= phi_ev_ini(ev) * n_ev_e(ev) * ev_quant(ev)
+         + EV_CHARGE(ev,'h1') * eta_ev_in(ev)
+         - EV_DISCHARGE(ev,'h1') / eta_ev_out(ev)
+         - EV_GED(ev,'h1')
+;
+
+con11c_ev_chargelev(ev,h)$( (ord(h)>1) )..
+         EV_L(ev,h) =E= EV_L(ev,h-1)
+         + EV_CHARGE(ev,h) * eta_ev_in(ev)
+         - EV_DISCHARGE(ev,h) / eta_ev_out(ev)
+%reserves%$ontext
+         + sum( (reserves)$(ord(reserves) = 2 or ord(reserves) = 4 or ord(reserves) = 6) ,(RP_EV_G2V(reserves,ev,h)* phi_reserves_call(reserves,h) ) * eta_ev_in(ev) )
+         - sum( (reserves)$(ord(reserves) = 1 or ord(reserves) = 3 or ord(reserves) = 5) ,(RP_EV_G2V(reserves,ev,h)* phi_reserves_call(reserves,h) ) * eta_ev_in(ev) )
+         - sum( (reserves)$(ord(reserves) = 1 or ord(reserves) = 3 or ord(reserves) = 5) ,(RP_EV_V2G(reserves,ev,h)* phi_reserves_call(reserves,h) ) / eta_ev_out(ev) )
+         + sum( (reserves)$(ord(reserves) = 2 or ord(reserves) = 4 or ord(reserves) = 6) ,(RP_EV_V2G(reserves,ev,h)* phi_reserves_call(reserves,h) ) / eta_ev_out(ev) )
+$ontext
+$offtext
+         - EV_GED(ev,h)
+;
+
+con11d_ev_chargelev_max(ev,h)..
+        EV_L(ev,h) =L= n_ev_e(ev) * ev_quant(ev)
+;
+
+con11e_ev_maxin(ev,h)..
+        EV_CHARGE(ev,h)
+%reserves%$ontext
+        +RP_EV_G2V('PR_do',ev,h)
+        +RP_EV_G2V('SR_do',ev,h)
+        +RP_EV_G2V('MR_do',ev,h)
+$ontext
+$offtext
+        =L= n_ev_p(ev,h) * ev_quant(ev)
+;
+
+con11f_ev_maxout(ev,h)..
+        EV_DISCHARGE(ev,h)
+%reserves%$ontext
+        +RP_EV_V2G('PR_up',ev,h)
+        +RP_EV_V2G('SR_up',ev,h)
+        +RP_EV_V2G('MR_up',ev,h)
+$ontext
+$offtext
+        =L= n_ev_p(ev,h) * ev_quant(ev)
+;
+
+con11g_ev_chargelev_ending(ev,h)$( ord(h) = card(h) )..
+         EV_L(ev,h) =E= phi_ev_ini(ev) * n_ev_e(ev) * ev_quant(ev)
+;
+
+con11h_ev_minin(ev,h)..
+         0 =L= EV_CHARGE(ev,h)
+        -RP_EV_G2V('PR_up',ev,h)
+        -RP_EV_G2V('SR_up',ev,h)
+        -RP_EV_G2V('MR_up',ev,h)
+;
+
+con11i_ev_maxin_lev(ev,h)..
+        ( EV_CHARGE(ev,h)
+        +RP_EV_G2V('PR_do',ev,h)
+        +RP_EV_G2V('SR_do',ev,h)
+        +RP_EV_G2V('MR_do',ev,h) ) * eta_ev_in(ev)
+        =L= n_ev_e(ev) * ev_quant(ev) - EV_L(ev,h-1)
+;
+
+con11j_ev_minout(ev,h)..
+         0 =L= EV_DISCHARGE(ev,h)
+        -RP_EV_V2G('PR_do',ev,h)
+        -RP_EV_V2G('SR_do',ev,h)
+        -RP_EV_V2G('MR_do',ev,h)
+;
+con11k_ev_maxout_lev(ev,h)..
+        ( EV_DISCHARGE(ev,h)
+        +RP_EV_V2G('PR_up',ev,h)
+        +RP_EV_V2G('SR_up',ev,h)
+        +RP_EV_V2G('MR_up',ev,h) ) / eta_ev_out(ev)
+        =L= EV_L(ev,h-1)
 ;
 
 
@@ -787,6 +944,24 @@ con10a_reserve_prov
 con10b_reserve_prov_PR
 $ontext
 $offtext
+%EV%$ontext
+con11a_ev_ed
+con11b_ev_chargelev_start
+con11c_ev_chargelev
+con11d_ev_chargelev_max
+con11e_ev_maxin
+con11f_ev_maxout
+con11g_ev_chargelev_ending
+$ontext
+$offtext
+%EV%$ontext
+%reserves%$ontext
+con11h_ev_minin
+con11i_ev_maxin_lev
+con11j_ev_minout
+con11k_ev_maxout_lev
+$ontext
+$offtext
 /;
 
 
@@ -814,6 +989,7 @@ corr_fac_res
 corr_fac_sto
 corr_fac_dsm_cu
 corr_fac_dsm_shift
+corr_fac_ev
 gross_energy_demand
 calc_maxprice
 calc_minprice
@@ -848,8 +1024,8 @@ phi_mean_reserves_call(reserves) = phi_mean_reserves_call_y('2013',reserves) ;
 %renewable_share%$goto skip_loop_res_share
 
 * Loop over res shares
-loop( loop_res_share ,
-        phi_min_res= 0$(ord(loop_res_share) = 1)
+loop( loop_res_share$(ord(loop_res_share) = 1) ,
+        phi_min_res= 0.645000224322628$(ord(loop_res_share) = 1)
          + 0.6$(ord(loop_res_share) = 2)
          + 0.7$(ord(loop_res_share) = 3)
          + 0.8$(ord(loop_res_share) = 4)
@@ -872,11 +1048,16 @@ corr_fac_res(res,h) = 0 ;
 corr_fac_sto(sto,h) = 0 ;
 corr_fac_dsm_cu(dsm_curt,h) = 0 ;
 corr_fac_dsm_shift(dsm_shift,h) = 0 ;
+corr_fac_ev(h) = 0 ;
 
 * Define gross energy demand for reporting, egual to equation 5a
 gross_energy_demand = sum( h , d(h) + sum( (sto) , STO_IN.l(sto,h) - STO_OUT.l(sto,h) )
 %DSM%$ontext
          - sum( dsm_curt , DSM_CU.l(dsm_curt,h) )
+$ontext
+$offtext
+%EV%$ontext
+         + sum( ev , EV_CHARGE.l(ev,h)- EV_DISCHARGE.l(ev,h) )
 $ontext
 $offtext
 %reserves%$ontext
@@ -898,6 +1079,22 @@ $offtext
 %reserves%$ontext
        - sum( dsm_curt , RP_DSM_CU.l('SR_up',dsm_curt,h) * phi_reserves_call('SR_up',h) )
        - sum( dsm_curt , RP_DSM_CU.l('MR_up',dsm_curt,h) * phi_reserves_call('MR_up',h) )
+$ontext
+$offtext
+%reserves%$ontext
+%EV%$ontext
+       + sum( ev , RP_EV_G2V.l('PR_do',ev,h)* phi_reserves_call('PR_do',h)
+         + RP_EV_G2V.l('SR_do',ev,h)* phi_reserves_call('SR_do',h)
+         + RP_EV_G2V.l('MR_do',ev,h)* phi_reserves_call('MR_do',h)
+         - RP_EV_G2V.l('PR_up',ev,h)* phi_reserves_call('PR_up',h)
+         - RP_EV_G2V.l('SR_up',ev,h)* phi_reserves_call('SR_up',h)
+         - RP_EV_G2V.l('MR_up',ev,h)* phi_reserves_call('MR_up',h)
+         - RP_EV_V2G.l('PR_up',ev,h)* phi_reserves_call('PR_up',h)
+         - RP_EV_V2G.l('SR_up',ev,h)* phi_reserves_call('SR_up',h)
+         - RP_EV_V2G.l('MR_up',ev,h)* phi_reserves_call('MR_up',h)
+         + RP_EV_V2G.l('PR_do',ev,h)* phi_reserves_call('PR_do',h)
+         + RP_EV_V2G.l('SR_do',ev,h)* phi_reserves_call('SR_do',h)
+         + RP_EV_V2G.l('MR_do',ev,h)* phi_reserves_call('MR_do',h)  )
 $ontext
 $offtext
 )
@@ -948,6 +1145,24 @@ $offtext
 ;
 $ontext
 $offtext
+%EV%$ontext
+%reserves%$ontext
+         corr_fac_ev(h) = sum(ev,
+         - RP_EV_G2V.l('PR_up',ev,h)* phi_reserves_call('PR_up',h)
+         - RP_EV_G2V.l('SR_up',ev,h)* phi_reserves_call('SR_up',h)
+         - RP_EV_G2V.l('MR_up',ev,h)* phi_reserves_call('MR_up',h)
+         - RP_EV_V2G.l('PR_up',ev,h)* phi_reserves_call('PR_up',h)
+         - RP_EV_V2G.l('SR_up',ev,h)* phi_reserves_call('SR_up',h)
+         - RP_EV_V2G.l('MR_up',ev,h)* phi_reserves_call('MR_up',h)
+         + RP_EV_G2V.l('PR_do',ev,h)* phi_reserves_call('PR_do',h)
+         + RP_EV_G2V.l('SR_do',ev,h)* phi_reserves_call('SR_do',h)
+         + RP_EV_G2V.l('MR_do',ev,h)* phi_reserves_call('MR_do',h)
+         + RP_EV_V2G.l('PR_do',ev,h)* phi_reserves_call('PR_do',h)
+         + RP_EV_V2G.l('SR_do',ev,h)* phi_reserves_call('SR_do',h)
+         + RP_EV_V2G.l('MR_do',ev,h)* phi_reserves_call('MR_do',h)  )
+;
+$ontext
+$offtext
 
 * Report files
         report('model status'%res_share%%em_share%) = DIETER.modelstat ;
@@ -975,6 +1190,13 @@ $offtext
         report_tech_hours('generation storage'%res_share%%em_share%,sto,h) =  STO_OUT.l(sto,h) ;
         report_tech_hours('storage loading'%res_share%%em_share%,sto,h) =  STO_IN.l(sto,h) ;
         report_tech_hours('storage level'%res_share%%em_share%,sto,h) =  STO_L.l(sto,h) ;
+%EV%$ontext
+        report_tech_hours('EV charge'%res_share%%em_share%,ev,h) =  EV_CHARGE.l(ev,h) ;
+        report_tech_hours('EV discharge'%res_share%%em_share%,ev,h) =  EV_DISCHARGE.l(ev,h) ;
+        report_tech_hours('EV phevfuel consumption'%res_share%%em_share%,ev,h) =  EV_PHEVFUEL.l(ev,h);
+        report_tech_hours('EV electrical consumption'%res_share%%em_share%,ev,h) =  EV_GED.l(ev,h);
+$ontext
+$offtext
         report_hours('demand'%res_share%%em_share%,h) = d(h) ;
         report('curtailment of fluct res absolute'%res_share%%em_share%) = sum((res,h),CU.l(res,h)) * %sec_hour% ;
         report('curtailment of fluct res relative'%res_share%%em_share%)$report('curtailment of fluct res absolute'%res_share%%em_share%) = sum((res,h),CU.l(res,h))/( sum((res,h),G_RES.l(res,h) - corr_fac_res(res,h) ) + sum((res,h),CU.l(res,h)) ) ;
@@ -1008,6 +1230,10 @@ $offtext
         + sum( (dsm_shift,h) , DSM_UP_DEMAND.l(dsm_shift,h) ) * %sec_hour%
 $ontext
 $offtext
+%EV%$ontext
+         + sum( (ev,h) , EV_CHARGE.l(ev,h) ) * %sec_hour%
+$ontext
+$offtext
 %reserves%$ontext
        + sum( h$(ord(h) > 1) , phi_reserves_pr* sum( reserves$( ord(reserves) > 2) , 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum( res , reserves_slope(reserves,res) * N_RES.l(res)/1000 ) ) ) * phi_reserves_call('PR_up',h) )
        + sum( h$(ord(h) > 1) , 1000 * phi_reserves_share('SR_up') * ( reserves_intercept('SR_up') + sum( res , reserves_slope('SR_up',res) * N_RES.l(res)/1000 ) ) * phi_reserves_call('SR_up',h) )
@@ -1022,6 +1248,10 @@ $offtext
         report_tech('Energy share'%res_share%%em_share%,'ror') = sum( h , G_L.l('ror',h) ) / report('Energy total'%res_share%%em_share%) * %sec_hour% + 1e-9 ;
         report_tech('Energy share'%res_share%%em_share%,res) = sum( h , G_RES.l(res,h) - corr_fac_res(res,h) ) / report('Energy total'%res_share%%em_share%) * %sec_hour% + 1e-9 ;
         report_tech('Energy share'%res_share%%em_share%,sto) = sum( h , STO_OUT.l(sto,h) - corr_fac_sto(sto,h) ) / report('Energy total'%res_share%%em_share%) * %sec_hour% + 1e-9 ;
+%EV%$ontext
+        report_tech('Energy share'%res_share%%em_share%,'ev_cum') = sum( (h,ev) , EV_DISCHARGE.l(ev,h) - corr_fac_ev(h) ) / report('Energy total'%res_share%%em_share%) * %sec_hour% + 1e-9 ;
+$ontext
+$offtext
         report_tech('Storage out total wholesale'%res_share%%em_share%,sto) = sum(h, report_tech_hours('generation storage'%res_share%%em_share%,sto,h) ) * %sec_hour% ;
         report_tech('Storage in total wholesale'%res_share%%em_share%,sto) = sum(h, report_tech_hours('storage loading'%res_share%%em_share%,sto,h) ) * %sec_hour% ;
 %reserves%$ontext
@@ -1046,6 +1276,20 @@ $ontext
 $offtext
         report_tech('Storage EP-ratio'%res_share%%em_share%,sto)$N_STO_P.l(sto) = N_STO_E.l(sto) * %sec_hour% / N_STO_P.l(sto) ;
 
+%EV%$ontext
+        report_tech('EV charge total wholesale'%res_share%%em_share%,'ev_cum') = sum((h,ev), report_tech_hours('EV charge'%res_share%%em_share%,ev,h) ) * %sec_hour% ;
+        report_tech('EV discharge total wholesale'%res_share%%em_share%,'ev_cum') = sum((h,ev), report_tech_hours('EV discharge'%res_share%%em_share%,ev,h) ) * %sec_hour% ;
+        report_tech('EV phevfuel total consumption'%res_share%%em_share%,'ev_cum') = sum((h,ev), report_tech_hours('EV phevfuel consumption'%res_share%%em_share%,ev,h) ) * %sec_hour% ;
+        report_tech('EV electrical total consumption'%res_share%%em_share%,'ev_cum') = sum((h,ev), report_tech_hours('EV electrical consumption'%res_share%%em_share%,ev,h) ) * %sec_hour% ;
+        report_tech('EV share of electrical consumption'%res_share%%em_share%,'ev_cum') = sum((h,ev), report_tech_hours('EV electrical consumption'%res_share%%em_share%,ev,h) ) * %sec_hour% / (sum((h,ev), report_tech_hours('EV electrical consumption'%res_share%%em_share%,ev,h) + report_tech_hours('EV phevfuel consumption'%res_share%%em_share%,ev,h) ) ) ;
+        report_tech('EV share of phevfuel consumption'%res_share%%em_share%,'ev_cum') = sum((h,ev), report_tech_hours('EV phevfuel consumption'%res_share%%em_share%,ev,h) ) * %sec_hour% / (sum((h,ev), report_tech_hours('EV electrical consumption'%res_share%%em_share%,ev,h) + report_tech_hours('EV phevfuel consumption'%res_share%%em_share%,ev,h) ) ) ;
+%reserves%$ontext
+        report_tech('EV positive reserves activation by charging'%res_share%%em_share%,'ev_cum') = sum( (ev,h,reserves)$(ord(reserves) = 1 or ord(reserves) = 3 or ord(reserves) = 5 ),  RP_EV_G2V.l(reserves,ev,h) * phi_reserves_call(reserves,h)) * %sec_hour% ;
+        report_tech('EV negative reserves activation by charging'%res_share%%em_share%,'ev_cum') = sum( (ev,h,reserves)$(ord(reserves) = 2 or ord(reserves) = 4 or ord(reserves) = 6 ),  RP_EV_G2V.l(reserves,ev,h) * phi_reserves_call(reserves,h)) * %sec_hour% ;
+        report_tech('EV positive reserves activation by discharging'%res_share%%em_share%,'ev_cum') = sum( (ev,h,reserves)$(ord(reserves) = 1 or ord(reserves) = 3 or ord(reserves) = 5 ), RP_EV_V2G.l(reserves,ev,h) * phi_reserves_call(reserves,h)) * %sec_hour% ;
+        report_tech('EV negative reserves activation by discharging'%res_share%%em_share%,'ev_cum') = sum( (ev,h,reserves)$(ord(reserves) = 2 or ord(reserves) = 4 or ord(reserves) = 6 ), RP_EV_V2G.l(reserves,ev,h) * phi_reserves_call(reserves,h)) * %sec_hour% ;
+$ontext
+$offtext
 %reserves%$ontext
          report_reserves_tech('Reserves provision ratio'%res_share%%em_share%,reserves,ct)$(N_CON.l(ct)) = sum( h , RP_CON.l(reserves,ct,h) ) / sum( h , G_L.l(ct,h) + corr_fac_con(ct,h) ) ;
          report_reserves_tech('Reserves activation ratio'%res_share%%em_share%,reserves,ct)$(N_CON.l(ct)) = sum( h , RP_CON.l(reserves,ct,h) * phi_reserves_call(reserves,h)) / sum( h , G_L.l(ct,h) + corr_fac_con(ct,h) ) ;
@@ -1090,15 +1334,43 @@ $offtext
         report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,ct)$(ord(reserves) < 3) = sum( h , RP_CON.l(reserves,ct,h)) / (phi_reserves_pr* sum( reservesreserves$( ord(reservesreserves) > 2 ) ,  (card(h) * 1000 * phi_reserves_share(reservesreserves) * (reserves_intercept(reservesreserves) + sum(resres,reserves_slope(reservesreserves,resres) * N_RES.l(resres)/1000) )) )) ;
         report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,res)$(ord(reserves) < 3) = sum( h , RP_RES.l(reserves,res,h)) / (phi_reserves_pr* sum( reservesreserves$( ord(reservesreserves) > 2 ) ,  (card(h) * 1000 * phi_reserves_share(reservesreserves) * (reserves_intercept(reservesreserves) + sum(resres,reserves_slope(reservesreserves,resres) * N_RES.l(resres)/1000) )) )) ;
         report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,sto)$(ord(reserves) < 3) = sum( h , RP_STO_IN.l(reserves,sto,h) + RP_STO_OUT.l(reserves,sto,h)) / (phi_reserves_pr* sum( reservesreserves$( ord(reservesreserves) > 2 ) ,  (card(h) * 1000 * phi_reserves_share(reservesreserves) * (reserves_intercept(reservesreserves) + sum(resres,reserves_slope(reservesreserves,resres) * N_RES.l(resres)/1000) )) ));
+%EV%$ontext
+        report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,'ev_cum')$(ord(reserves) < 3) = sum( (h,ev), RP_EV_V2G.l(reserves,ev,h)+ RP_EV_G2V.l(reserves,ev,h)) / (phi_reserves_pr * sum( reservesreserves$( ord(reservesreserves) > 2 ) ,  (card(h) * 1000 * phi_reserves_share(reservesreserves) * (reserves_intercept(reservesreserves) + sum(resres,reserves_slope(reservesreserves,resres) * N_res.l(resres)/1000) )) ));
+        report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,'G2V_cum')$(ord(reserves) < 3) = sum( (h,ev), RP_EV_G2V.l(reserves,ev,h)) / (phi_reserves_pr * sum( reservesreserves$( ord(reservesreserves) > 2 ) ,  (card(h) * 1000 * phi_reserves_share(reservesreserves) * (reserves_intercept(reservesreserves) + sum(resres,reserves_slope(reservesreserves,resres) * N_res.l(resres)/1000) )) ));
+        report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,'V2G_cum')$(ord(reserves) < 3) = sum( (h,ev), RP_EV_V2G.l(reserves,ev,h)) / (phi_reserves_pr * sum( reservesreserves$( ord(reservesreserves) > 2 ) ,  (card(h) * 1000 * phi_reserves_share(reservesreserves) * (reserves_intercept(reservesreserves) + sum(resres,reserves_slope(reservesreserves,resres) * N_res.l(resres)/1000) )) ));
+$ontext
+$offtext
+%reserves%$ontext
         report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,ct)$( ord(reserves) > 2 ) = sum( h , RP_CON.l(reserves,ct,h)) / (card(h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_RES.l(resres)/1000) ) ) ;
         report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,res)$( ord(reserves) > 2 ) = sum( h , RP_RES.l(reserves,res,h)) / (card(h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_RES.l(resres)/1000) )) ;
         report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,sto)$( ord(reserves) > 2 ) = sum( h , RP_STO_IN.l(reserves,sto,h) + RP_STO_OUT.l(reserves,sto,h)) / (card(h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_RES.l(resres)/1000) )) ;
+%EV%$ontext
+        report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,'ev_cum')$( ord(reserves) > 2 ) = sum( (h,ev) , RP_EV_V2G.l(reserves,ev,h)+ RP_EV_G2V.l(reserves,ev,h)) / (card(h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_res.l(resres)/1000) )) ;
+        report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,'G2V_cum')$( ord(reserves) > 2 ) = sum( (h,ev) , RP_EV_G2V.l(reserves,ev,h)) / (card(h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_res.l(resres)/1000) )) ;
+        report_reserves_tech('reserve provision shares'%res_share%%em_share%,reserves,'V2G_cum')$( ord(reserves) > 2 ) = sum( (h,ev) , RP_EV_V2G.l(reserves,ev,h)) / (card(h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_res.l(resres)/1000) )) ;
+$ontext
+$offtext
+%reserves%$ontext
         report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,ct)$(ord(reserves) < 3) = sum(h,RP_CON.l(reserves,ct,h)*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) *  phi_reserves_pr* sum( reservesreserves$( ord(reservesreserves) > 2) , 1000 * phi_reserves_share(reservesreserves) * ( reserves_intercept(reservesreserves) + sum(resres , reserves_slope(reservesreserves,resres) * N_RES.l(resres)/1000 ) ) )   ) ;
         report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,res)$(ord(reserves) < 3) = sum(h,RP_RES.l(reserves,res,h)*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) *  phi_reserves_pr* sum( reservesreserves$( ord(reservesreserves) > 2) , 1000 * phi_reserves_share(reservesreserves) * ( reserves_intercept(reservesreserves) + sum(resres , reserves_slope(reservesreserves,resres) * N_RES.l(resres)/1000 ) ) )   ) ;
         report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,sto)$(ord(reserves) < 3) = sum(h,(RP_STO_IN.l(reserves,sto,h) + RP_STO_OUT.l(reserves,sto,h))*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) *  phi_reserves_pr* sum( reservesreserves$( ord(reservesreserves) > 2) , 1000 * phi_reserves_share(reservesreserves) * ( reserves_intercept(reservesreserves) + sum(resres , reserves_slope(reservesreserves,resres) * N_RES.l(resres)/1000 ) ) )   );
+%EV%$ontext
+        report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,'ev_cum')$(ord(reserves) < 3) = sum((h,ev),(RP_EV_V2G.l(reserves,ev,h)+ RP_EV_G2V.l(reserves,ev,h))*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) *  phi_reserves_pr * sum( reservesreserves$( ord(reservesreserves) > 2) , 1000 * phi_reserves_share(reservesreserves) * ( reserves_intercept(reservesreserves) + sum(resres , reserves_slope(reservesreserves,resres) * N_res.l(resres)/1000 ) ) )   ) ;
+        report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,'G2V_cum')$(ord(reserves) < 3) = sum((h,ev),RP_EV_G2V.l(reserves,ev,h)*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) *  phi_reserves_pr * sum( reservesreserves$( ord(reservesreserves) > 2) , 1000 * phi_reserves_share(reservesreserves) * ( reserves_intercept(reservesreserves) + sum(resres , reserves_slope(reservesreserves,resres) * N_res.l(resres)/1000 ) ) )   ) ;
+        report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,'V2G_cum')$(ord(reserves) < 3) = sum((h,ev),RP_EV_V2G.l(reserves,ev,h)*phi_reserves_call(reserves,h)) /  sum( h , phi_reserves_call(reserves,h) *  phi_reserves_pr * sum( reservesreserves$( ord(reservesreserves) > 2) , 1000 * phi_reserves_share(reservesreserves) * ( reserves_intercept(reservesreserves) + sum(resres , reserves_slope(reservesreserves,resres) * N_res.l(resres)/1000 ) ) )   ) ;
+$ontext
+$offtext
+%reserves%$ontext
         report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,ct)$( ord(reserves) > 2 ) = sum(h,RP_CON.l(reserves,ct,h)*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_RES.l(resres)/1000) )) ;
         report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,res)$( ord(reserves) > 2 ) = sum(h,RP_RES.l(reserves,res,h)*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_RES.l(resres)/1000) )) ;
         report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,sto)$( ord(reserves) > 2 ) = sum(h,(RP_STO_IN.l(reserves,sto,h) + RP_STO_OUT.l(reserves,sto,h))*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_RES.l(resres)/1000) )) ;
+%EV%$ontext
+        report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,'ev_cum')$( ord(reserves) > 2 ) = sum((h,ev),(RP_EV_V2G.l(reserves,ev,h)+ RP_EV_G2V.l(reserves,ev,h))*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_res.l(resres)/1000) )) ;
+        report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,'G2V_cum')$( ord(reserves) > 2 ) = sum((h,ev),RP_EV_G2V.l(reserves,ev,h)*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_res.l(resres)/1000) )) ;
+        report_reserves_tech('reserve activation shares'%res_share%%em_share%,reserves,'V2G_cum')$( ord(reserves) > 2 ) = sum((h,ev),RP_EV_V2G.l(reserves,ev,h)*phi_reserves_call(reserves,h)) / sum( h , phi_reserves_call(reserves,h) * 1000 * phi_reserves_share(reserves) * (reserves_intercept(reserves) + sum(resres,reserves_slope(reserves,resres) * N_res.l(resres)/1000) )) ;
+$ontext
+$offtext
+%reserves%$ontext
         report_reserves_tech_hours('Reserves provision'%res_share%%em_share%,reserves,'required',h) = report_reserves('reserve provision requirements'%res_share%%em_share%,reserves) ;
         report_reserves_tech_hours('Reserves activation'%res_share%%em_share%,reserves,'required',h) = phi_reserves_call(reserves,h) * report_reserves('reserve provision requirements'%res_share%%em_share%,reserves) ;
         report_reserves_tech_hours('Reserves provision'%res_share%%em_share%,reserves,ct,h) = RP_CON.l(reserves,ct,h) ;
@@ -1107,6 +1379,9 @@ $offtext
         report_reserves_tech_hours('Reserves activation'%res_share%%em_share%,reserves,res,h) = RP_RES.l(reserves,res,h)*phi_reserves_call(reserves,h) ;
         report_reserves_tech_hours('Reserves provision'%res_share%%em_share%,reserves,sto,h) = RP_STO_IN.l(reserves,sto,h) + RP_STO_OUT.l(reserves,sto,h) ;
         report_reserves_tech_hours('Reserves activation'%res_share%%em_share%,reserves,sto,h) = (RP_STO_IN.l(reserves,sto,h) + RP_STO_OUT.l(reserves,sto,h))*phi_reserves_call(reserves,h) ;
+%EV%$ontext
+        report_reserves_tech_hours('Reserves provision'%res_share%%em_share%,reserves,ev,h) = RP_EV_V2G.l(reserves,ev,h)+ RP_EV_G2V.l(reserves,ev,h) ;
+        report_reserves_tech_hours('Reserves activation'%res_share%%em_share%,reserves,ev,h) = (RP_EV_V2G.l(reserves,ev,h)+ RP_EV_G2V.l(reserves,ev,h))*phi_reserves_call(reserves,h) ;
 $ontext
 $offtext
 
