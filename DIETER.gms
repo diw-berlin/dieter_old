@@ -38,6 +38,8 @@ $setglobal prosumage ""
 $setglobal heat "*"
 $setglobal HEAT_NIGHT ""
 
+$setglobal P2G "*"
+
 $setglobal EV ""
 $setglobal EV_EXOG ""
 * Set star to indicate renewables constraint on electric vehicles - DEFAULT is same quota as for the rest of the electricity system

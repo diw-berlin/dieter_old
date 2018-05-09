@@ -28,6 +28,9 @@ rsvr                     Reservoir technologies
 dsm                      DSM technologies
  dsm_shift(dsm)          DSM load shifting technologies
  dsm_curt(dsm)           DSM load curtailment technologies
+electrolyzer             Set of power to gas technologies
+fuelcells                Set of gas to power technologies
+gasstorage 
 year                     Base year for temporal data
 h                        Hours
 n                        Nodes
@@ -255,6 +258,19 @@ d_dhw_y
 d_dhw
 nets_profile(h)
 
+
+***** P2G *****
+p2g_inv_overnight
+p2g_inv_interest
+p2g_inv_lifetime
+eta_elec
+eta_fuelcell
+eta_gs_out
+eta_gs_in
+eta_gs_hourly
+gas_demand
+
+
 *--- Technololgy attributes ---*
 phi_heat_type            Share of heating type ch per building archetype bu in [0 1]
 eta_heat_stat            Static efficiency for heating technologies in [0 1]
@@ -295,6 +311,13 @@ c_i_dsm_cu       DSM: Annualized investment costs load curtailment in Euro per M
 c_i_dsm_shift    DSM: Annualized investment costs load shifting in Euro per MW
 
 c_i_ntc          Investment for net transfer capacity in Euro per MW and km
+
+c_i_electrolyzer
+c_fix_electrolyzer
+c_i_fuelcells
+c_fix_fuelcells
+c_i_gs
+c_fix_gs
 
 phi_mean_reserves_call_y         Hourly mean of share reserves called per year in [0 1]
 phi_mean_reserves_call           Hourly mean of share reserves called in [0 1]
