@@ -30,7 +30,7 @@ dsm                      DSM technologies
  dsm_curt(dsm)           DSM load curtailment technologies
 electrolyzer             Set of power to gas technologies
 fuelcells                Set of gas to power technologies
-gasstorage 
+gasstorage
 year                     Base year for temporal data
 h                        Hours
 n                        Nodes
@@ -364,7 +364,7 @@ temp_source_upload
 
 ***************  UPLOAD TIME-CONSTANT SETS AND PARAMETERS  *********************
 
-$onecho >temp.tmp
+$onecho >%gdxdir%temp.tmp
 se=0
 
 dset=n                                   rng=spatial!M2                  rdim=0 cdim=1
@@ -427,9 +427,9 @@ par=reserves_data_upload         rng=reserves!A5         rdim=5 cdim=1
 par=heat_data_upload             rng=heat!A5             rdim=7 cdim=1
 $offecho
 
-%skip_Excel%$call "gdxxrw data_input.xlsx @temp.tmp o=Data_input maxdupeerrors=100";
+%skip_Excel%$call "gdxxrw %datadir%%datafile% @%gdxdir%temp.tmp o=%gdxdir%Data_input maxdupeerrors=100";
 
-$GDXin Data_input.gdx
+$GDXin %gdxdir%Data_input.gdx
 $load n tech headers_tech tech_dispatch tech_res_con
 $load sto headers_sto rsvr headers_reservoir reservoir_data dsm headers_dsm dsm_type
 $load technology_data_upload storage_data dsm_data_upload
@@ -453,7 +453,7 @@ $offtext
 
 ***************  UPLOAD TIME-SERIES SETS AND PARAMETERS  ***********************
 
-$onecho >temp2.tmp
+$onecho >%gdxdir%temp2.tmp
 se=0
 
 dset=h                           rng=basic!A6            rdim=1 cdim=0
@@ -479,9 +479,9 @@ par=nets_profile                 rng=NETS!B2:C8762       rdim=1 cdim=0
 par=temp_source_upload           rng=heat_pump!A4        rdim=1 cdim=2
 $offecho
 
-%skip_Excel%$call "gdxxrw time_series.xlsx @temp2.tmp o=time_series";
+%skip_Excel%$call "gdxxrw %datadir%time_series.xlsx @%gdxdir%temp2.tmp o=%gdxdir%time_series";
 
-$GDXin time_series.gdx
+$GDXin %gdxdir%time_series.gdx
 $load h headers_time year time_data_upload
 $load headers_time_ev ev_time_data_upload
 $load reserves_time_data_activation

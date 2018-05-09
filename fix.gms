@@ -197,7 +197,7 @@ H_STO_OUT.up(n,bu,ch,h)$(feat_node('heat',n) = 0) = 0 ;
 $ontext
 $offtext
 
-%P2G$ontext
+%P2G%$ontext
          GS_STO_OUT.fx(gasstorage,h)$(ord(h) = 1) = 0;
          GS_STO_IN.fx(gasstorage,h)$(ord(h) = 1) = 0;
          GS_STO_L.fx(gasstorage,h)$(ord(h) = 1) = 0;

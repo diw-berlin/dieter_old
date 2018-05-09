@@ -19,7 +19,10 @@ $offtext
 **************************
 
 * Set star to skip Excel upload and load data from gdx
-$setglobal skip_Excel ""
+$setglobal skip_Excel "*"
+$setglobal datadir data/
+$setglobal gdxdir gdxfiles/
+$setglobal datafile data_input_v01_09-05-18.xlsx
 
 * Choose base year
 $setglobal base_year "'2030'"
@@ -35,10 +38,10 @@ $setglobal reserves_exogenous "*"
 
 $setglobal prosumage ""
 
-$setglobal heat "*"
+$setglobal heat ""
 $setglobal HEAT_NIGHT ""
 
-$setglobal P2G "*"
+$setglobal P2G ""
 
 $setglobal EV ""
 $setglobal EV_EXOG ""

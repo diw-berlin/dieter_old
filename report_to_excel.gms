@@ -57,6 +57,7 @@ excel_cost('Nodal cost: investment and fix') = sum( (n,loop_res_share,loop_ev,lo
 excel_cost('Energy generated net') = sum( (n,loop_res_share,loop_ev,loop_prosumage) , report('energy generated net',loop_res_share,loop_ev,loop_prosumage)) ;
 excel_cost('Average cost') = excel_cost('Nodal cost: dispatch & investment')/excel_cost('Energy generated net') ;
 
+%heat%$ontext
 excel_cost_building_heat('Costs per square meter',bu,'setsh')$(sum( n, area_floor(n,bu,'setsh')*phi_heat_type(n,bu,'setsh'))) = sum((n,loop_res_share,loop_ev,loop_prosumage) , report_heat_tech('total costs',loop_res_share,loop_ev,loop_prosumage,n,bu,'setsh')) / sum( n, area_floor(n,bu,'setsh')*phi_heat_type(n,bu,'setsh')) ;
 excel_cost_building_heat('Costs per square meter heating',bu,'setsh')$(sum( n, area_floor(n,bu,'setsh')*phi_heat_type(n,bu,'setsh'))) = sum( (n,h,loop_res_share,loop_ev,loop_prosumage) , report_heat_tech_hours('price heat electricity consumption',loop_res_share,loop_ev,loop_prosumage,n,bu,'setsh',h) * sum( scen$(map(scen,loop_res_share,loop_ev,loop_prosumage)) , ( theta_sets(n,bu,'setsh') * (lev_H_SETS_IN(scen,n,bu,'setsh',h) + corr_fac_sets(scen,n,bu,'setsh',h))))) / sum( n, area_floor(n,bu,'setsh')*phi_heat_type(n,bu,'setsh')) ;
 excel_cost_building_heat('Costs per square meter DHW',bu,'setsh')$(sum( n, area_floor(n,bu,'setsh')*phi_heat_type(n,bu,'setsh'))) = sum( (n,h,loop_res_share,loop_ev,loop_prosumage) , report_heat_tech_hours('price DHW electricity consumption',loop_res_share,loop_ev,loop_prosumage,n,bu,'setsh',h) * sum( scen$(map(scen,loop_res_share,loop_ev,loop_prosumage)) , (theta_sets(n,bu,'setsh') * (lev_H_DHW_AUX_ELEC_IN(scen,n,bu,'setsh',h) + corr_fac_sets_aux(scen,n,bu,'setsh',h))))) / sum( n, area_floor(n,bu,'setsh')*phi_heat_type(n,bu,'setsh')) ;
@@ -92,6 +93,9 @@ excel_heat('Total power in',ch)$(sum((n,bu) , area_floor(n,bu,ch)*phi_heat_type(
 excel_heat('Total power out',ch)$(sum((n,bu) , area_floor(n,bu,ch)*phi_heat_type(n,bu,ch))) = sum( (n,bu) , n_sets_p_out(n,bu,ch) ) ;
 excel_heat('Mean price heating',ch)$(sum( (loop_res_share,loop_ev,loop_prosumage,n) , report_heat_tech('average price heat electricity consumption over all bu',loop_res_share,loop_ev,loop_prosumage,n,'over all bu',ch))) = sum( (loop_res_share,loop_ev,loop_prosumage,n) , report_heat_tech('average price heat electricity consumption over all bu',loop_res_share,loop_ev,loop_prosumage,n,'over all bu',ch) ) ;
 excel_heat('Mean price heating','NETS') = sum( (loop_res_share,loop_ev,loop_prosumage,n) , sum( h, nets_profile(h) * report_hours('price',loop_res_share,loop_ev,loop_prosumage,h,n)) / sum( h, nets_profile(h)) ) ;
+$ontext
+$offtext
+
 
 excel_capacities('Capacities',tech) = sum( (n,loop_res_share,loop_ev,loop_prosumage) , report_tech('capacities conventional',loop_res_share,loop_ev,loop_prosumage,tech,n) + report_tech('capacities renewable',loop_res_share,loop_ev,loop_prosumage,tech,n)) ;
 excel_capacities('Capacities',rsvr) = sum( (n,loop_res_share,loop_ev,loop_prosumage) , report_tech('capacities reservoir MW',loop_res_share,loop_ev,loop_prosumage,rsvr,n) ) ;
@@ -166,7 +170,19 @@ $ontext
 $offtext
 
 %reserves%$ontext
-execute_unload "results_to_excel", excel_cost excel_cost_building_heat excel_cost_building_heat_other excel_cost_building excel_heat excel_capacities excel_res_curt excel_prices excel_dispatch excel_reserves ;
+execute_unload "results_to_excel",
+excel_cost
+$ifthen %heat% == *
+excel_cost_building_heat
+excel_cost_building_heat_other
+excel_cost_building excel_heat
+$endif
+excel_capacities
+excel_res_curt
+excel_prices
+excel_dispatch
+excel_reserves
+;
 $ontext
 $offtext
 
