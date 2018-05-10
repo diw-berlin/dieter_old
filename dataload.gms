@@ -731,7 +731,7 @@ eta_fuelcell(n,fuelcell) = p2g_data(n,fuelcell,'efficiency') ;
 eta_gs_out(n,gasstorage) = p2g_data(n,gasstorage,'eta_out') ;
 eta_gs_in(n,gasstorage) = p2g_data(n,gasstorage,'eta_in') ;
 eta_gs_hourly(n,gasstorage) = p2g_data(n,gasstorage,'eta_hourly') ;
-gas_demand(n,h) = 1000 ;
+gas_demand(n,h) = 0 ;
 
 
 ***************  CALCULATE DERIVED PARAMETERS  *********************************

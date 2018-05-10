@@ -121,11 +121,11 @@ N_TECH.fx(n,tech)$(m_p(n,tech) = 0 ) = 0 ;
 G_RES.fx(n,tech,h)$(m_p(n,tech) = 0 ) = 0 ;
 CU.fx(n,tech,h)$(m_p(n,tech) = 0 ) = 0 ;
 
-N_STO_P.fx(n,sto)$(m_sto_p(n,sto) = 0 ) = 0 ;
-N_STO_E.fx(n,sto)$(m_sto_e(n,sto) = 0 ) = 0 ;
-STO_IN.fx(n,sto,h)$(m_sto_p(n,sto) = 0 ) = 0 ;
-STO_OUT.fx(n,sto,h)$(m_sto_p(n,sto) = 0 ) = 0 ;
-STO_L.fx(n,sto,h)$(m_sto_p(n,sto) = 0 ) = 0 ;
+*N_STO_P.fx(n,sto)$(m_sto_p(n,sto) = 0 ) = 0 ;
+*N_STO_E.fx(n,sto)$(m_sto_e(n,sto) = 0 ) = 0 ;
+*STO_IN.fx(n,sto,h)$(m_sto_p(n,sto) = 0 ) = 0 ;
+*STO_OUT.fx(n,sto,h)$(m_sto_p(n,sto) = 0 ) = 0 ;
+*STO_L.fx(n,sto,h)$(m_sto_p(n,sto) = 0 ) = 0 ;
 RP_STO_IN.fx(n,reserves,sto,h)$(m_sto_p(n,sto) = 0 ) = 0 ;
 RP_STO_OUT.fx(n,reserves,sto,h)$(m_sto_p(n,sto) = 0 ) = 0 ;
 
@@ -198,15 +198,17 @@ $ontext
 $offtext
 
 %P2G%$ontext
+         G_P2G.fx(n,electrolyzer,h)$(ord(h) = 1) = 0;
+         G_G2P.fx(n,fuelcell,h)$(ord(h) = 1) = 0;
          GS_STO_OUT.fx(n,gasstorage,h)$(ord(h) = 1) = 0;
          GS_STO_IN.fx(n,gasstorage,h)$(ord(h) = 1) = 0;
-         GS_STO_L.fx(n,gasstorage,h)$(ord(h) = 1) = 0;
+*         GS_STO_L.fx(n,gasstorage,h)$(ord(h) = 1) = 0;
 $ontext
 $offtext
 
 
 
-
+$ontext
 ********************************************************************************
 **** DEFAULT LEVELS FOR REPORT PARAMETERS  *************************************
 ********************************************************************************
@@ -311,7 +313,7 @@ lev_RP_SETS_AUX(superscen,n,reserves,bu,ch,h) = 0 ;
 lev_RP_SETS(superscen,n,reserves,bu,ch,h) = 0 ;
 lev_RP_HP(superscen,n,reserves,bu,ch,h) = 0 ;
 lev_RP_H_ELEC(superscen,n,reserves,bu,ch,h) = 0 ;
-
+$offtext
 
 
 

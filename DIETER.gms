@@ -298,7 +298,7 @@ $include model.gms
 * Solver options
 $onecho > cplex.opt
 lpmethod 4
-threads 4
+threads -1
 epgap 1e-3
 parallelmode -1
 $offecho
@@ -306,7 +306,7 @@ $offecho
 %no_crossover%$ontext
 $onecho > cplex.opt
 lpmethod 4
-threads 4
+threads -1
 epgap 1e-3
 parallelmode -1
 barcrossalg -1
@@ -321,6 +321,9 @@ dieter.holdFixed = 1 ;
 phi_min_res = 1 ;
 ev_quant = 0;
 phi_pro_self = 0;
+
+$include fix.gms
+$include scenario.gms
 
 solve DIETER using lp min Z ;
 $stop

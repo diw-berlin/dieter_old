@@ -273,6 +273,7 @@ con15b_P2G_storage_balance
 con15c_P2G_invest_p2g
 con15d_P2G_invest_g2p
 con15e_P2G_invest_sto
+con15f_P2G_sto_ini
 ;
 
 
@@ -1309,6 +1310,12 @@ con15e_P2G_invest_sto(n,gasstorage,h)..
 
         GS_STO_L(n,gasstorage,h) =l= N_GS(n,gasstorage)
 ;
+
+con15f_P2G_sto_ini(n,gasstorage,h)$(ord(h) = 1 or ord(h)=card(h))..
+
+        GS_STO_L(n,gasstorage,h) =E= 0.5 * N_GS(n,gasstorage)
+;
+
 $ontext
 $offtext
 
@@ -1494,6 +1501,7 @@ con15b_P2G_storage_balance
 con15c_P2G_invest_p2g
 con15d_P2G_invest_g2p
 con15e_P2G_invest_sto
+con15f_P2G_sto_ini
 $ontext
 $offtext
 /;
