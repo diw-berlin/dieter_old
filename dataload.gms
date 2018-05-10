@@ -793,12 +793,14 @@ c_i_rsvr_e(n,rsvr) = c_i_rsvr_e(n,rsvr)*card(h)/8760 ;
 c_i_rsvr_p(n,rsvr) = c_i_rsvr_p(n,rsvr)*card(h)/8760 ;
 c_i_dsm_cu(n,dsm_curt) = c_i_dsm_cu(n,dsm_curt)*card(h)/8760 ;
 c_i_dsm_shift(n,dsm_shift) = c_i_dsm_shift(n,dsm_shift)*card(h)/8760 ;
+c_i_p2g(n,p2g) = c_i_p2g(n,p2g)*card(h)/8760 ;
 
 c_fix(n,tech) = c_fix(n,tech)*card(h)/8760 ;
 c_fix_sto(n,sto) = c_fix_sto(n,sto)*card(h)/8760 ;
 c_fix_dsm_cu(n,dsm_curt) = c_fix_dsm_cu(n,dsm_curt)*card(h)/8760 ;
 c_fix_dsm_shift(n,dsm_shift) = c_fix_dsm_shift(n,dsm_shift)*card(h)/8760 ;
 c_fix_rsvr(n,rsvr) = c_fix_rsvr(n,rsvr)*card(h)/8760 ;
+c_fix_p2g(n,p2g) = c_fix_p2g(n,p2g)*card(h)/8760 ;  
 
 m_e(n,'bio') = m_e(n,'bio')*card(h)/8760 ;
 

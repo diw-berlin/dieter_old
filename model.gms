@@ -536,6 +536,7 @@ con4e_maxout_sto(sto,h,n)..
 $ontext
 $offtext
         =L= N_STO_P(n,sto)
+
 ;
 
 con4f_resrv_sto(sto,h,n)$m_sto_e(n,sto)..

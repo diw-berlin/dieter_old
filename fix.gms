@@ -208,7 +208,7 @@ $offtext
 
 
 
-$ontext
+
 ********************************************************************************
 **** DEFAULT LEVELS FOR REPORT PARAMETERS  *************************************
 ********************************************************************************
@@ -313,7 +313,7 @@ lev_RP_SETS_AUX(superscen,n,reserves,bu,ch,h) = 0 ;
 lev_RP_SETS(superscen,n,reserves,bu,ch,h) = 0 ;
 lev_RP_HP(superscen,n,reserves,bu,ch,h) = 0 ;
 lev_RP_H_ELEC(superscen,n,reserves,bu,ch,h) = 0 ;
-$offtext
+
 
 
 

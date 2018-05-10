@@ -22,7 +22,7 @@ $offtext
 $setglobal skip_Excel "*"
 $setglobal datadir data/
 $setglobal gdxdir gdxfiles/
-$setglobal datafile data_input_v01_09-05-18.xlsx
+$setglobal datafile data_input_v02_10-05-18.xlsx
 
 * Choose base year
 $setglobal base_year "'2030'"
@@ -58,7 +58,7 @@ $setglobal ror_parameter ""
 $setglobal ror_variable "*"
 
 * Set star to determine loops, otherwise default 100% renewables
-$setglobal loop_over_renewable_share "*"
+$setglobal loop_over_renewable_share ""
 
 * Set star to run test variant with each second hour
 * FEATURE DOES NOT WORK WITH HEAT VERSION
@@ -318,15 +318,6 @@ $offtext
 dieter.OptFile = 1;
 dieter.holdFixed = 1 ;
 
-phi_min_res = 1 ;
-ev_quant = 0;
-phi_pro_self = 0;
-
-$include fix.gms
-$include scenario.gms
-
-solve DIETER using lp min Z ;
-$stop
 ********************************************************************************
 ***** Solve *****
 ********************************************************************************
@@ -467,8 +458,19 @@ lev_RP_HP(superscen,n,reserves,bu,ch,h)
 lev_RP_H_ELEC(superscen,n,reserves,bu,ch,h)
 lev_RP_SETS_AUX(superscen,n,reserves,bu,ch,h)
 
+* P2G
+lev_G_P2G(superscen,n,p2g,h)
+lev_G_G2P(superscen,n,p2g,h)
+lev_GS_STO_IN(superscen,n,p2g,h)
+lev_GS_STO_OUT(superscen,n,p2g,h)
+lev_GS_STO_L(superscen,n,p2g,h)
+lev_N_GS(superscen,n,p2g)
+lev_N_P2G(superscen,n,p2g)
+lev_N_G2P(superscen,n,p2g)
+
 * Infeasibility
 lev_G_INFES(superscen,n,h)
+lev_G_P2G_INFEAS(superscen,n,h)
 ;
 
 
@@ -504,7 +506,7 @@ CU               .level          .lev_CU
 STO_IN           .level          .lev_STO_IN
 STO_OUT          .level          .lev_STO_OUT
 STO_L            .level          .lev_STO_L
-N_TECH            .level         .lev_N_TECH
+N_TECH           .level          .lev_N_TECH
 N_STO_E          .level          .lev_N_STO_E
 N_STO_P          .level          .lev_N_STO_P
 NTC              .level          .lev_NTC
@@ -625,6 +627,20 @@ RP_H_ELEC        .level          .lev_RP_H_ELEC
 $ontext
 $offtext
 
+%P2G%$ontext
+G_P2G                 .level      .lev_G_P2G
+G_G2P                 .level      .lev_G_G2P
+GS_STO_IN             .level      .lev_GS_STO_IN
+GS_STO_OUT            .level      .lev_GS_STO_OUT
+GS_STO_L              .level      .lev_GS_STO_L
+N_GS                  .level      .lev_N_GS
+N_P2G                 .level      .lev_N_P2G
+N_G2P                 .level      .lev_N_G2P
+
+G_P2G_INFEAS          .level      .lev_G_P2G_INFEAS
+$ontext
+$offtext
+
 G_INFES          .level          .lev_G_INFES
 /
 ;
@@ -655,7 +671,7 @@ $ontext
 $offtext
 ;
 
-$include report_to_excel.gms
+*$include report_to_excel.gms
 
 
 
