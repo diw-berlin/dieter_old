@@ -111,15 +111,15 @@ H_DHW_AUX_LEV(n,bu,ch,h)         Heating - domestic hot water: level of auxiliar
 H_DHW_AUX_OUT(n,bu,ch,h)         Heating - domestic hot water: auxiliary DHW provision for SETS
 
 
-P2G(electrolyzer,h)              Generation from power to hydrogen
-G2P(fuelcells,h)                 Generation from hydrogen to power
-GS_STO_IN(gasstorage,h)
-GS_STO_OUT(gasstorage,h)
-GS_STO_L(gasstorage,h)
+G_P2G(n,p2g,h)              Generation from power to hydrogen
+G_G2P(n,p2g,h)                  Generation from hydrogen to power
+GS_STO_IN(n,p2g,h)
+GS_STO_OUT(n,p2g,h)
+GS_STO_L(n,p2g,h)
 
-N_GS(gasstorage)
-N_P2G(electrolyzer)
-N_G2P(fuelcells)
+N_GS(n,p2g)
+N_P2G(n,p2g)
+N_G2P(n,p2g)
 ;
 
 
@@ -357,12 +357,14 @@ $offtext
                  + sum( (n,h) , c_infes * G_INFES(n,h) )
 
 %P2G%$ontext
-                + sum( electrolyzer , c_i_electrolyzer(electrolyzer)*N_P2G(electrolyzer)
-                + sum( electrolyzer , c_fix_electrolyzer(electrolyzer)*N_P2G(electrolyzer)
-                + sum( fuelcells , c_i_fuelcells(fuelcells)*N_G2P(fuelcells)
-                + sum( fuelcells , c_fix_fuelcells(fuelcells)*N_G2P(fuelcells)
-                + sum( gasstorages , c_i_gs(gasstorages)*N_GS(gasstorages)
-                + sum( gasstorages , c_fix_gs(gasstorages)*N_GS(gasstorages)
+                + sum( (n,electrolyzer) , c_i_p2g(n,electrolyzer)*N_P2G(n,electrolyzer))
+                + sum( (n,electrolyzer) , c_fix_p2g(n,electrolyzer)*N_P2G(n,electrolyzer))
+                + sum( (n,fuelcell) , c_i_p2g(n,fuelcell)*N_G2P(n,fuelcell))
+                + sum( (n,fuelcell) , c_fix_p2g(n,fuelcell)*N_G2P(n,fuelcell))
+                + sum( (n,gasstorage) , c_i_p2g(n,gasstorage)*N_GS(n,gasstorage))
+                + sum( (n,gasstorage) , c_fix_p2g(n,gasstorage)*N_GS(n,gasstorage))
+
+                + sum( (n,h), c_infes * G_P2G_INFEAS(n,h))
 $ontext
 $offtext
 ;
@@ -397,7 +399,7 @@ $ontext
 $offtext
 
 %P2G%$ontext
-         + sum(electrolyzer, 1/eta_elec(electrolyzer) * P2G(electrolyzer,hh))
+        + sum(electrolyzer, G_P2G(n,electrolyzer,hh))
 $ontext
 $offtext
          =E=
@@ -429,7 +431,8 @@ $ontext
 $offtext
 
 %P2G%$ontext
-         + sum(fuelcells, eta_fuelcell(fuelcells) * G2P(fuelcells,hh))
+
+         + sum(fuelcell, eta_fuelcell(n,fuelcell) * G_G2P(n,fuelcell,hh))
 $ontext
 $offtext
 
@@ -1263,36 +1266,48 @@ con14v_storage_maxlev(n,bu,hst,h)$(feat_node('heat',n) AND theta_storage(n,bu,hs
 ***** P2G constraints *****
 * ---------------------------------------------------------------------------- *
 %P2G%$ontext
-con15a_P2G_balance(h)..
+con15a_P2G_balance(n,h)..
 
-        sum(electrolyzer, P2G(electrolyzer,h))
-        + sum(gasstorage, eta_gs_out(gasstorage) * GS_STO_OUT(gasstorage,h))
-        
+        sum(electrolyzer, eta_elec(n,electrolyzer) * G_P2G(n,electrolyzer,h))
+        + sum(gasstorage, GS_STO_OUT(n,gasstorage,h))
+
+        + G_P2G_INFEAS(n,h)
+
         =e=
 
-        gas_demand(h)
-        + sum(fuelcell, G2P(fuelcell,h))
-        + sum(gasstorage, eta_gs_in(gasstorage) * GS_STO_IN(gasstorage,h))
+
+        + sum(fuelcell, 1/eta_fuelcell(n,fuelcell) * G_G2P(n,fuelcell,h))
+        + sum(gasstorage,GS_STO_IN(n,gasstorage,h))
+        + gas_demand(n,h)
+
+
 ;
 
-con15b_P2G_storage_balance(gasstorage,h)$(ord(h) > 1)..
+con15b_P2G_storage_balance(n,gasstorage,h)$(ord(h) > 1)..
 
-        GS_STO_L(gasstorage,h) =e= eta_gs_hourly(gasstorage) * GS_STO_L(gasstorage,h-1) + GS_STO_IN(gasstorage,h) - GS_STO_OUT(gasstorage,h)
+        GS_STO_L(n,gasstorage,h)
+
+        =e=
+
+        eta_gs_hourly(n,gasstorage) * GS_STO_L(n,gasstorage,h-1)
+        + GS_STO_IN(n,gasstorage,h)
+        - GS_STO_OUT(n,gasstorage,h)
+
 ;
 
-con15c_P2G_invest_p2g(electrolyzer,h)..
+con15c_P2G_invest_p2g(n,electrolyzer,h)..
 
-        P2G(electrolyzer,h) =l= N_P2G(electrolyzer)
+        G_P2G(n,electrolyzer,h) =l= N_P2G(n,electrolyzer)
 ;
 
-con15d_P2G_invest_g2p(fuelcell,h)..
+con15d_P2G_invest_g2p(n,fuelcell,h)..
 
-        G2P(fuelcell,h) =l= N_G2P(fuelcell)
+        G_G2P(n,fuelcell,h) =l= N_G2P(n,fuelcell)
 ;
 
-con15e_P2G_invest_sto(gasstorage,h)..
+con15e_P2G_invest_sto(n,gasstorage,h)..
 
-        GS_STO_L(gasstorage,h) =l= N_GS(gasstorage)
+        GS_STO_L(n,gasstorage,h) =l= N_GS(n,gasstorage)
 ;
 $ontext
 $offtext

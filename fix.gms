@@ -198,9 +198,9 @@ $ontext
 $offtext
 
 %P2G%$ontext
-         GS_STO_OUT.fx(gasstorage,h)$(ord(h) = 1) = 0;
-         GS_STO_IN.fx(gasstorage,h)$(ord(h) = 1) = 0;
-         GS_STO_L.fx(gasstorage,h)$(ord(h) = 1) = 0;
+         GS_STO_OUT.fx(n,gasstorage,h)$(ord(h) = 1) = 0;
+         GS_STO_IN.fx(n,gasstorage,h)$(ord(h) = 1) = 0;
+         GS_STO_L.fx(n,gasstorage,h)$(ord(h) = 1) = 0;
 $ontext
 $offtext
 

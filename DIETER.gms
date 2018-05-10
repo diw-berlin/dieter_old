@@ -41,7 +41,7 @@ $setglobal prosumage ""
 $setglobal heat ""
 $setglobal HEAT_NIGHT ""
 
-$setglobal P2G ""
+$setglobal P2G "*"
 
 $setglobal EV ""
 $setglobal EV_EXOG ""
@@ -318,9 +318,12 @@ $offtext
 dieter.OptFile = 1;
 dieter.holdFixed = 1 ;
 
+phi_min_res = 1 ;
+ev_quant = 0;
+phi_pro_self = 0;
 
-
-
+solve DIETER using lp min Z ;
+$stop
 ********************************************************************************
 ***** Solve *****
 ********************************************************************************

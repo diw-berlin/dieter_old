@@ -28,9 +28,10 @@ rsvr                     Reservoir technologies
 dsm                      DSM technologies
  dsm_shift(dsm)          DSM load shifting technologies
  dsm_curt(dsm)           DSM load curtailment technologies
-electrolyzer             Set of power to gas technologies
-fuelcells                Set of gas to power technologies
-gasstorage
+p2g
+ electrolyzer(p2g)             Set of power to gas technologies
+ fuelcell(p2g)                Set of gas to power technologies
+ gasstorage(p2g)
 year                     Base year for temporal data
 h                        Hours
 n                        Nodes
@@ -80,6 +81,8 @@ headers_heat                     Heat data - upload headers
  heat_fossil
 headers_time_heat                Heat data - upload headers time data
 headers_time_dhw
+headers_p2g
+ p2g_type
 ;
 
 
@@ -312,12 +315,8 @@ c_i_dsm_shift    DSM: Annualized investment costs load shifting in Euro per MW
 
 c_i_ntc          Investment for net transfer capacity in Euro per MW and km
 
-c_i_electrolyzer
-c_fix_electrolyzer
-c_i_fuelcells
-c_fix_fuelcells
-c_i_gs
-c_fix_gs
+c_i_p2g
+c_fix_p2g
 
 phi_mean_reserves_call_y         Hourly mean of share reserves called per year in [0 1]
 phi_mean_reserves_call           Hourly mean of share reserves called in [0 1]
@@ -357,6 +356,8 @@ heat_data(n,bu,ch,headers_heat)
 dh_upload(h,n,year,headers_time_heat,bu)
 d_dhw_upload(h,n,year,headers_time_heat,bu)
 temp_source_upload
+p2g_data_upload(n,p2g,p2g_type,headers_p2g)
+p2g_data(n,p2g,headers_p2g)
 ;
 
 
@@ -411,8 +412,9 @@ dset=heat_fossil                         rng=heat!G6                     rdim=1 
 
 dset=headers_heat                        rng=heat!H5                     rdim=0 cdim=1
 
-
-
+dset=headers_p2g                        rng=p2g!D5                     rdim=0 cdim=1
+dset=p2g                                rng=p2g!B6                     rdim=1 cdim=0
+dset=p2g_type                           rng=p2g!C6                     rdim=1 cdim=0
 
 par=technology_data_upload       rng=Technologies!A5     rdim=4 cdim=1
 par=storage_data                 rng=storage!A5          rdim=2 cdim=1
@@ -425,6 +427,8 @@ par=prosumage_data_generation    rng=prosumage!A5        rdim=2 cdim=1
 par=prosumage_data_storage       rng=prosumage!G5        rdim=2 cdim=1
 par=reserves_data_upload         rng=reserves!A5         rdim=5 cdim=1
 par=heat_data_upload             rng=heat!A5             rdim=7 cdim=1
+par=p2g_data_upload              rng=p2g!A5              rdim=3 cdim=1
+
 $offecho
 
 %skip_Excel%$call "gdxxrw %datadir%%datafile% @%gdxdir%temp.tmp o=%gdxdir%Data_input maxdupeerrors=100";
@@ -442,7 +446,8 @@ $load ev headers_ev ev_data
 $load headers_prosumage_generation headers_prosumage_storage prosumage_data_generation prosumage_data_storage
 $load reserves reserves_up_down reserves_spin_nonspin reserves_prim_nonprim headers_reserves reserves_data_upload
 $load bu ch heat_storage heat_hp heat_elec heat_fossil headers_heat heat_data_upload
-;
+$load headers_p2g p2g p2g_type p2g_data_upload
+
 
 %GER_only%$ontext
 parameter inc ;
@@ -711,6 +716,23 @@ pen_heat_fuel(n,bu,ch) = heat_data(n,bu,ch,'penalty_non-electric_heat_supply') ;
 area_floor(n,bu,ch) = heat_data(n,bu,ch,'area_floor') ;
 
 
+*--- P2G ---*
+electrolyzer(p2g)$sum( (n,p2g_type,headers_p2g), p2g_data_upload(n,p2g,'electrolyzer',headers_p2g)) = yes;
+fuelcell(p2g)$sum( (n,p2g_type,headers_p2g), p2g_data_upload(n,p2g,'fuelcell',headers_p2g)) = yes;
+gasstorage(p2g)$sum( (n,p2g_type,headers_p2g), p2g_data_upload(n,p2g,'gasstorage',headers_p2g)) = yes;
+p2g_data(n,p2g,headers_p2g) = sum(p2g_type, p2g_data_upload(n,p2g,p2g_type,headers_p2g) ) ;
+
+p2g_inv_overnight(n,p2g) = p2g_data(n,p2g,'oc') ;
+p2g_inv_interest(n,p2g) = p2g_data(n,p2g,'interest_rate') ;
+p2g_inv_lifetime(n,p2g) = p2g_data(n,p2g,'lifetime') ;
+c_fix_p2g(n,p2g) = p2g_data(n,p2g,'fixed_costs') ;
+eta_elec(n,electrolyzer) = p2g_data(n,electrolyzer,'efficiency') ;
+eta_fuelcell(n,fuelcell) = p2g_data(n,fuelcell,'efficiency') ;
+eta_gs_out(n,gasstorage) = p2g_data(n,gasstorage,'eta_out') ;
+eta_gs_in(n,gasstorage) = p2g_data(n,gasstorage,'eta_in') ;
+eta_gs_hourly(n,gasstorage) = p2g_data(n,gasstorage,'eta_hourly') ;
+gas_demand(n,h) = 1000 ;
+
 
 ***************  CALCULATE DERIVED PARAMETERS  *********************************
 
@@ -742,6 +764,10 @@ c_i_dsm_shift(n,dsm_shift) = c_inv_overnight_dsm_shift(n,dsm_shift)*( inv_intere
 
 c_i_ntc(l) = c_inv_overnight_ntc(l) * (inv_interest_ntc(l) * (1 + inv_interest_ntc(l))**(inv_lifetime_ntc(l)) )
                  / ((1 + inv_interest_ntc(l)) ** (inv_lifetime_ntc(l))-1 ) ;
+
+c_i_p2g(n,p2g) =  p2g_inv_overnight(n,p2g) * (p2g_inv_interest(n,p2g) * (1 + p2g_inv_interest(n,p2g))**(p2g_inv_lifetime(n,p2g)) )
+                 / ((1 + p2g_inv_interest(n,p2g)) ** (p2g_inv_lifetime(n,p2g))-1 ) ;
+
 
 phi_mean_reserves_call_y(n,year,reserves) = sum(h, phi_reserves_call_y(n,year,reserves,h) ) / card(h) + eps ;
 
@@ -801,6 +827,7 @@ check_heat_agg = smax( (n,bu) , check_heat(n,bu) ) ;
 
 Positive variable
 G_INFES(n,h)
+G_P2G_INFEAS(n,h)
 ;
 
 Parameter
