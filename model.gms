@@ -400,7 +400,8 @@ $ontext
 $offtext
 
 %P2G%$ontext
-        + sum(electrolyzer, G_P2G(n,electrolyzer,hh))
+        + sum(fuelcell, eta_fuelcell(n,fuelcell) * G_G2P(n,fuelcell,hh))
+
 $ontext
 $offtext
          =E=
@@ -433,7 +434,7 @@ $offtext
 
 %P2G%$ontext
 
-         + sum(fuelcell, eta_fuelcell(n,fuelcell) * G_G2P(n,fuelcell,hh))
+         + sum(electrolyzer, G_P2G(n,electrolyzer,hh))
 $ontext
 $offtext
 

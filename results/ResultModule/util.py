@@ -82,6 +82,15 @@ scale_dict = {'MW': 1,
               'TW': 1000000,
               'TWh': 1000000}
 
+subset_dict = {'capacity': ['capacities conventional', 'capacities renewable'],
+               'stor_gen': ['capacities storage MW',
+                            'capacities power to gas',
+                            'capacities gas to power'],
+               'stor_cap': ['capacities storage MWh', 'capacities gas storage'],
+               'generation': ['Yearly energy'],
+               'curtailment': ['curtailment of fluct res absolute']
+               }
+
 
 def rename_and_order_technologies(df):   
     
@@ -113,13 +122,6 @@ def stacked_to_pivot_df(df, subset, scale=1):
     return df_pivot
 
 
-subset_dict = {'capacity': ['capacities conventional', 'capacities renewable'],
-               'stor_gen': ['capacities storage MW',
-                            'capacities power to gas',
-                            'capacities gas to power'],
-               'stor_cap': ['capacities storage MWh', 'capacities gas storage'],
-               'generation': ['Yearly energy']
-               }
 
 def df_per_res_share(df, which, unit):
 
@@ -132,9 +134,9 @@ def df_per_res_share(df, which, unit):
 
 def plot_summary_investment(df):
 
-    a = df_per_res_share(df, which='capacity', unit='GW')
-    b = df_per_res_share(df, which='stor_gen', unit='GW')
-    c = df_per_res_share(df, which='stor_cap', unit='GWh')
+    data_plot1 = df_per_res_share(df, which='capacity', unit='GW')
+    data_plot2 = df_per_res_share(df, which='stor_gen', unit='GW')
+    data_plot3 = df_per_res_share(df, which='stor_cap', unit='GWh')
     
     
     params = {'legend.fontsize': 8,
@@ -149,7 +151,7 @@ def plot_summary_investment(df):
     ax2 = f.add_subplot(132, sharex=ax1, sharey=ax1)
     ax3 = f.add_subplot(133, sharex=ax1)
     axarr = [ax1, ax2, ax3]
-    data_arr = [a, b, c]
+    data_arr = [data_plot1, data_plot2, data_plot3]
     titles = ['Generation capacity in GW',
               'Storage generation in GW',
               'Storage energy in GWh']

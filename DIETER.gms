@@ -58,7 +58,7 @@ $setglobal ror_parameter ""
 $setglobal ror_variable "*"
 
 * Set star to determine loops, otherwise default 100% renewables
-$setglobal loop_over_renewable_share ""
+$setglobal loop_over_renewable_share "*"
 
 * Set star to run test variant with each second hour
 * FEATURE DOES NOT WORK WITH HEAT VERSION
@@ -107,7 +107,7 @@ $if "%EV_EXOG%" == "*" $if "%EV_DEFAULT%%EV_100RES%%EV_FREE%" == "***" $abort Ch
 
 sets
 %loop_over_renewable_share%$ontext
-loop_res_share   Solution loop for different shares of renewables       /1/
+loop_res_share   Solution loop for different shares of renewables       /80,95,99/
 $ontext
 $offtext
 
