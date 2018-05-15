@@ -4,10 +4,12 @@ import pandas as pd
 import ResultModule.util as u
 
 report_tech = pd.read_csv("report_tech.csv")
-report_tech.iloc[:,-1] = report_tech.iloc[:,-1].div(1000)
+
 
 u.plot_summary_investment(report_tech)
 
+
+test = u.df_per_res_share(report_tech, which='generation', scale=1000000)
 
 
 
