@@ -107,7 +107,7 @@ $if "%EV_EXOG%" == "*" $if "%EV_DEFAULT%%EV_100RES%%EV_FREE%" == "***" $abort Ch
 
 sets
 %loop_over_renewable_share%$ontext
-loop_res_share   Solution loop for different shares of renewables       /80,95,99/
+loop_res_share   Solution loop for different shares of renewables       /70,80,95,100/
 $ontext
 $offtext
 

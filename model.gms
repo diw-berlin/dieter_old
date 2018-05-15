@@ -400,8 +400,7 @@ $ontext
 $offtext
 
 %P2G%$ontext
-        + sum(fuelcell, eta_fuelcell(n,fuelcell) * G_G2P(n,fuelcell,hh))
-
+        + sum(electrolyzer, G_P2G(n,electrolyzer,hh))
 $ontext
 $offtext
          =E=
@@ -433,8 +432,7 @@ $ontext
 $offtext
 
 %P2G%$ontext
-
-         + sum(electrolyzer, G_P2G(n,electrolyzer,hh))
+         + sum(fuelcell, eta_fuelcell(n,fuelcell) * G_G2P(n,fuelcell,hh))
 $ontext
 $offtext
 
@@ -1313,9 +1311,9 @@ con15e_P2G_invest_sto(n,gasstorage,h)..
         GS_STO_L(n,gasstorage,h) =l= N_GS(n,gasstorage)
 ;
 
-con15f_P2G_sto_ini(n,gasstorage,h)$(ord(h) = 1 or ord(h)=card(h))..
+con15f_P2G_sto_ini(n,gasstorage)..
 
-        GS_STO_L(n,gasstorage,h) =E= 0.5 * N_GS(n,gasstorage)
+        GS_STO_L(n,gasstorage,'h1') =E= GS_STO_L(n,gasstorage,'h8760')
 ;
 
 $ontext
