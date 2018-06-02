@@ -14,108 +14,108 @@ $offtext
 
 Variables
 Z                Value objective function in Euro
-F(l,h)           Energy flow over link l in hour h in MWh
+F(l,h_full)           Energy flow over link l in hour h in MWh
 ;
 
 Positive Variables
-G_L(n,tech,h)            Generation level in hour h in MWh
-G_UP(n,tech,h)           Generation upshift in hour h in MWh
-G_DO(n,tech,h)           Generation downshift in hour h in MWh
+G_L(n,tech,h_full)            Generation level in hour h in MWh
+G_UP(n,tech,h_full)           Generation upshift in hour h in MWh
+G_DO(n,tech,h_full)           Generation downshift in hour h in MWh
 
-G_RES(n,tech,h)          Generation renewables type res in hour h in MWh
-CU(n,tech,h)             Renewables curtailment technology res in hour h in MWh
+G_RES(n,tech,h_full)          Generation renewables type res in hour h in MWh
+CU(n,tech,h_full)             Renewables curtailment technology res in hour h in MWh
 
-STO_IN(n,sto,h)          Storage inflow technology sto hour h in MWh
-STO_OUT(n,sto,h)         Storage outflow technology sto hour h in MWh
-STO_L(n,sto,h)           Storage level technology sto hour h in MWh
+STO_IN(n,sto,h_full)          Storage inflow technology sto hour h in MWh
+STO_OUT(n,sto,h_full)         Storage outflow technology sto hour h in MWh
+STO_L(n,sto,h_full)           Storage level technology sto hour h in MWh
 
-EV_CHARGE(n,ev,h)        Electric vehicle charging vehicle profile ev hour h in MWh
-EV_DISCHARGE(n,ev,h)     Electric vehicle discharging vehicle profile ev hour h in MWh
-EV_L(n,ev,h)             Electric vehicle charging level vehicle profile ev hour h in MWh
-EV_PHEVFUEL(n,ev,h)      Plug in hybrid electric vehicle conventional fuel use vehicle profile ev hour h in MWh
-EV_GED(n,ev,h)           Grid electricity demand for mobility vehicle profile ev hour h in MWh
+EV_CHARGE(n,ev,h_full)        Electric vehicle charging vehicle profile ev hour h in MWh
+EV_DISCHARGE(n,ev,h_full)     Electric vehicle discharging vehicle profile ev hour h in MWh
+EV_L(n,ev,h_full)             Electric vehicle charging level vehicle profile ev hour h in MWh
+EV_PHEVFUEL(n,ev,h_full)      Plug in hybrid electric vehicle conventional fuel use vehicle profile ev hour h in MWh
+EV_GED(n,ev,h_full)           Grid electricity demand for mobility vehicle profile ev hour h in MWh
 
 N_TECH(n,tech)           Technology ct built in MW
 N_STO_E(n,sto)           Storage technology built - Energy in MWh
 N_STO_P(n,sto)           Storage loading and discharging capacity built - Capacity in MW
 
-DSM_CU(n,dsm,h)          DSM: Load curtailment hour h in MWh
-DSM_UP(n,dsm,h)          DSM: Load shifting up hour h technology dsm in MWh
-DSM_DO(n,dsm,h,hh)       DSM: Load shifting down in hour hh to account for upshifts in hour h technology dsm in MWh
+DSM_CU(n,dsm,h_full)          DSM: Load curtailment hour h in MWh
+DSM_UP(n,dsm,h_full)          DSM: Load shifting up hour h technology dsm in MWh
+DSM_DO(n,dsm,h_full,hh_full)       DSM: Load shifting down in hour hh to account for upshifts in hour h technology dsm in MWh
 
-DSM_UP_DEMAND(n,dsm,h)   DSM: Load shifting up active for wholesale demand in hour h of technology dsm in MWh
-DSM_DO_DEMAND(n,dsm,h)   DSM: Load shifting down active for wholesale demand in hour h of technology dsm in MWh
+DSM_UP_DEMAND(n,dsm,h_full)   DSM: Load shifting up active for wholesale demand in hour h of technology dsm in MWh
+DSM_DO_DEMAND(n,dsm,h_full)   DSM: Load shifting down active for wholesale demand in hour h of technology dsm in MWh
 
 N_DSM_CU(n,dsm)          DSM: Load curtailment capacity in MW
 N_DSM_SHIFT(n,dsm)       DSM: Load shifting capacity in MWh
 
-RP_DIS(n,reserves,tech,h)        Reserve provision by conventionals in hour h in MW
-RP_NONDIS(n,reserves,tech,h)     Reserve provision by renewables in hour h in MW
-RP_STO_IN(n,reserves,sto,h)      Reserve provision by storage in in hour h in MW
-RP_STO_OUT(n,reserves,sto,h)     Reserve provision by storage out in hour h in MW
-RP_EV_V2G(n,reserves,ev,h)       Reserve provision by electric vehicles V2G hour h in MW
-RP_EV_G2V(n,reserves,ev,h)       Reserve provision by electric vehicles G2V hour h in MW
-RP_DSM_CU(n,reserves,dsm,h)      Reserve provision by DSM load curtailment in hour h in MW
-RP_DSM_SHIFT(n,reserves,dsm,h)   Reserve provision by DSM load shifting in hour h in MW
-RP_RSVR(n,reserves,rsvr,h)       Reserve provision by reservoirs h in MW
-RP_SETS(n,reserves,bu,ch,h)      Reserve provision by SETS
-RP_SETS_AUX(n,reserves,bu,ch,h)
-RP_HP(n,reserves,bu,ch,h)        Reserve provision by heat pumps
-RP_H_ELEC(n,reserves,bu,ch,h)    Reserve provision by hybrid electric heaters
+RP_DIS(n,reserves,tech,h_full)        Reserve provision by conventionals in hour h in MW
+RP_NONDIS(n,reserves,tech,h_full)     Reserve provision by renewables in hour h in MW
+RP_STO_IN(n,reserves,sto,h_full)      Reserve provision by storage in in hour h in MW
+RP_STO_OUT(n,reserves,sto,h_full)     Reserve provision by storage out in hour h in MW
+RP_EV_V2G(n,reserves,ev,h_full)       Reserve provision by electric vehicles V2G hour h in MW
+RP_EV_G2V(n,reserves,ev,h_full)       Reserve provision by electric vehicles G2V hour h in MW
+RP_DSM_CU(n,reserves,dsm,h_full)      Reserve provision by DSM load curtailment in hour h in MW
+RP_DSM_SHIFT(n,reserves,dsm,h_full)   Reserve provision by DSM load shifting in hour h in MW
+RP_RSVR(n,reserves,rsvr,h_full)       Reserve provision by reservoirs h in MW
+RP_SETS(n,reserves,bu,ch,h_full)      Reserve provision by SETS
+RP_SETS_AUX(n,reserves,bu,ch,h_full)
+RP_HP(n,reserves,bu,ch,h_full)        Reserve provision by heat pumps
+RP_H_ELEC(n,reserves,bu,ch,h_full)    Reserve provision by hybrid electric heaters
 
-CU_PRO(n,tech,h)                 Prosumage: curtailment of renewable generation in hour h in MWh
-G_MARKET_PRO2M(n,tech,h)         Prosumage. energy sent to market in hour h in MWh
-G_MARKET_M2PRO(n,h)              Prosumage: withdrawal of energy from market in hour h in MWh
-G_RES_PRO(n,tech,h)              Prosumage: hourly renewables generation in hour h in MWh
-STO_IN_PRO2PRO(n,tech,sto,h)     Prosumage: storage loading from generation for discharging to consumption in hour h in MWh
-STO_IN_PRO2M(n,tech,sto,h)       Prosumage: storage loading from generation for discharging to market in hour h in MWh
-STO_IN_M2PRO(n,sto,h)            Prosumage: storage loading from market for discharging to consumption in hour h in MWh
-STO_IN_M2M(n,sto,h)              Prosumage: storage loading from market for discharging to market in hour h in MWh
-STO_OUT_PRO2PRO(n,sto,h)         Prosumage: storage discharging to consumption from generation in hour h in MWh
-STO_OUT_PRO2M(n,sto,h)           Prosumage: storage discharging to market from generation in hour h in MWh
-STO_OUT_M2PRO(n,sto,h)           Prosumage: storage discharging to consumption from market in hour h in MWh
-STO_OUT_M2M(n,sto,h)             Prosumage: storage discharging to market from market in hour h in MWh
-STO_L_PRO2PRO(n,sto,h)           Prosumage: storage level generation to consumption in hour h in MWh
-STO_L_PRO2M(n,sto,h)             Prosumage: storage level generation to market in hour h in MWh
-STO_L_M2PRO(n,sto,h)             Prosumage: storage level market to consumotion in hour h in MWh
-STO_L_M2M(n,sto,h)               Prosumage: storage level market to market in hour h in MWh
+CU_PRO(n,tech,h_full)                 Prosumage: curtailment of renewable generation in hour h in MWh
+G_MARKET_PRO2M(n,tech,h_full)         Prosumage. energy sent to market in hour h in MWh
+G_MARKET_M2PRO(n,h_full)              Prosumage: withdrawal of energy from market in hour h in MWh
+G_RES_PRO(n,tech,h_full)              Prosumage: hourly renewables generation in hour h in MWh
+STO_IN_PRO2PRO(n,tech,sto,h_full)     Prosumage: storage loading from generation for discharging to consumption in hour h in MWh
+STO_IN_PRO2M(n,tech,sto,h_full)       Prosumage: storage loading from generation for discharging to market in hour h in MWh
+STO_IN_M2PRO(n,sto,h_full)            Prosumage: storage loading from market for discharging to consumption in hour h in MWh
+STO_IN_M2M(n,sto,h_full)              Prosumage: storage loading from market for discharging to market in hour h in MWh
+STO_OUT_PRO2PRO(n,sto,h_full)         Prosumage: storage discharging to consumption from generation in hour h in MWh
+STO_OUT_PRO2M(n,sto,h_full)           Prosumage: storage discharging to market from generation in hour h in MWh
+STO_OUT_M2PRO(n,sto,h_full)           Prosumage: storage discharging to consumption from market in hour h in MWh
+STO_OUT_M2M(n,sto,h_full)             Prosumage: storage discharging to market from market in hour h in MWh
+STO_L_PRO2PRO(n,sto,h_full)           Prosumage: storage level generation to consumption in hour h in MWh
+STO_L_PRO2M(n,sto,h_full)             Prosumage: storage level generation to market in hour h in MWh
+STO_L_M2PRO(n,sto,h_full)             Prosumage: storage level market to consumotion in hour h in MWh
+STO_L_M2M(n,sto,h_full)               Prosumage: storage level market to market in hour h in MWh
 N_STO_E_PRO(n,sto)               Prosumage: installed storage energy in MWh
 N_STO_P_PRO(n,sto)               Prosumage: installed storage power in MW
-STO_L_PRO(n,sto,h)               Prosumage: overall storage level in hour h in MWh
+STO_L_PRO(n,sto,h_full)               Prosumage: overall storage level in hour h in MWh
 N_RES_PRO(n,tech)                Prosumage: installed renewables capacities in MW
 
 NTC(l)                           Trade: installed NTC on line l in MW
 
-RSVR_OUT(n,rsvr,h)               Reservoirs: outflow in hour h in MWh
-RSVR_L(n,rsvr,h)                 Reservoirs: level in hour h in MWh
+RSVR_OUT(n,rsvr,h_full)               Reservoirs: outflow in hour h in MWh
+RSVR_L(n,rsvr,h_full)                 Reservoirs: level in hour h in MWh
 N_RSVR_E(n,rsvr)                 Reservoirs: installed energy capacity in MWh
 N_RSVR_P(n,rsvr)                 Reservoirs: installed power capacity in MW
 
-H_DIR(n,bu,ch,h)                 Heating: direct heating in hour h in MWh for building type bu with haeting technology ch
-H_SETS_LEV(n,bu,ch,h)            Heating: storage level SETS technologies in MWh
-H_SETS_IN(n,bu,ch,h)             Heating: storage inflow SETS technologies in MWh
-H_SETS_OUT(n,bu,ch,h)            Heating: storage outflow SETS technologies in MWh
-H_HP_IN(n,bu,ch,hh)              Heating: electricity demand heat pump technologies in MWh
-H_STO_LEV(n,bu,ch,h)             Heating: storage level storage technologies in MWh
-H_STO_IN_HP(n,bu,ch,h)           Heating: storage inflow from heat pumps to storage technologies in MWh
-H_STO_IN_ELECTRIC(n,bu,ch,h)     Heating: storage inflow from electric heating to storage technologies in MWh
-H_ELECTRIC_IN(n,bu,ch,h)         Heating: hybrid electric heaters electricity demand
-H_STO_IN_FOSSIL(n,bu,ch,h)       Heating: storage inflow from nonelectric heating to storage technologies in MWh
-H_STO_OUT(n,bu,ch,h)             Heating: storage outflow from storage technologies in MWh
+H_DIR(n,bu,ch,h_full)                 Heating: direct heating in hour h in MWh for building type bu with haeting technology ch
+H_SETS_LEV(n,bu,ch,h_full)            Heating: storage level SETS technologies in MWh
+H_SETS_IN(n,bu,ch,h_full)             Heating: storage inflow SETS technologies in MWh
+H_SETS_OUT(n,bu,ch,h_full)            Heating: storage outflow SETS technologies in MWh
+H_HP_IN(n,bu,ch,h_full)              Heating: electricity demand heat pump technologies in MWh
+H_STO_LEV(n,bu,ch,h_full)             Heating: storage level storage technologies in MWh
+H_STO_IN_HP(n,bu,ch,h_full)           Heating: storage inflow from heat pumps to storage technologies in MWh
+H_STO_IN_ELECTRIC(n,bu,ch,h_full)     Heating: storage inflow from electric heating to storage technologies in MWh
+H_ELECTRIC_IN(n,bu,ch,h_full)         Heating: hybrid electric heaters electricity demand
+H_STO_IN_FOSSIL(n,bu,ch,h_full)       Heating: storage inflow from nonelectric heating to storage technologies in MWh
+H_STO_OUT(n,bu,ch,h_full)             Heating: storage outflow from storage technologies in MWh
 
-H_DHW_DIR(n,bu,ch,h)             Heating - domestic hot water: provision in case of direct electric heating
-H_DHW_STO_OUT(n,bu,ch,h)         Heating - domestic hot water: DHW storage outflow
+H_DHW_DIR(n,bu,ch,h_full)             Heating - domestic hot water: provision in case of direct electric heating
+H_DHW_STO_OUT(n,bu,ch,h_full)         Heating - domestic hot water: DHW storage outflow
 
-H_DHW_AUX_ELEC_IN(n,bu,ch,h)     Heating - domestic hot water: electrical energy input
-H_DHW_AUX_LEV(n,bu,ch,h)         Heating - domestic hot water: level of auxiliary hot water tank for SETS
-H_DHW_AUX_OUT(n,bu,ch,h)         Heating - domestic hot water: auxiliary DHW provision for SETS
+H_DHW_AUX_ELEC_IN(n,bu,ch,h_full)     Heating - domestic hot water: electrical energy input
+H_DHW_AUX_LEV(n,bu,ch,h_full)         Heating - domestic hot water: level of auxiliary hot water tank for SETS
+H_DHW_AUX_OUT(n,bu,ch,h_full)         Heating - domestic hot water: auxiliary DHW provision for SETS
 
 
-G_P2G(n,p2g,h)              Generation from power to hydrogen
-G_G2P(n,p2g,h)                  Generation from hydrogen to power
-GS_STO_IN(n,p2g,h)
-GS_STO_OUT(n,p2g,h)
-GS_STO_L(n,p2g,h)
+G_P2G(n,p2g,h_full)              Generation from power to hydrogen
+G_G2P(n,p2g,h_full)                  Generation from hydrogen to power
+GS_STO_IN(n,p2g,h_full)
+GS_STO_OUT(n,p2g,h_full)
+GS_STO_L(n,p2g,h_full)
 
 N_GS(n,p2g)
 N_P2G(n,p2g)
@@ -1120,7 +1120,7 @@ con13j_min_FLH(n,rsvr)$m_rsvr_e(n,rsvr)..
 con14a_heat_balance(n,bu,ch,h)$feat_node('heat',n)..
          theta_dir(n,bu,ch) * H_DIR(n,bu,ch,h) + theta_sets(n,bu,ch) * H_SETS_OUT(n,bu,ch,h)+ theta_storage(n,bu,ch) * H_STO_OUT(n,bu,ch,h)
          + theta_sets(n,bu,ch) * (1-eta_heat_stat(n,bu,ch)) * H_SETS_LEV(n,bu,ch,h-1)$(theta_sets(n,bu,ch) AND ord(h) > 1)
-         =G= dh(n,bu,ch,h)
+         =G= heat_share *dh(n,bu,ch,h)
 ;
 
 con14b_dhw_balance(n,bu,ch,h)$feat_node('heat',n)..
@@ -1267,7 +1267,7 @@ con14v_storage_maxlev(n,bu,hst,h)$(feat_node('heat',n) AND theta_storage(n,bu,hs
 ***** P2G constraints *****
 * ---------------------------------------------------------------------------- *
 %P2G%$ontext
-con15a_P2G_balance(n,h)..
+con15a_P2G_balance(n,h)$(ord(h) gt 1)..
 
         sum(electrolyzer, eta_elec(n,electrolyzer) * G_P2G(n,electrolyzer,h))
         + sum(gasstorage, GS_STO_OUT(n,gasstorage,h))
@@ -1279,7 +1279,7 @@ con15a_P2G_balance(n,h)..
 
         + sum(fuelcell, 1/eta_fuelcell(n,fuelcell) * G_G2P(n,fuelcell,h))
         + sum(gasstorage,GS_STO_IN(n,gasstorage,h))
-        + gas_demand(n,h)
+        + gas_demand
 
 
 ;

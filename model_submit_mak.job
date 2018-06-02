@@ -1,0 +1,17 @@
+#!/bin/bash --login
+#$ -cwd
+#$ -N dieter
+#$ -o /net/work/kendzior/output_dieter/dieter.$JOB_ID.$TASK_ID-$SGE_TASK_ID.out
+#$ -j y
+#$ -l h_rt=172800
+#$ -l mem_free=15G
+#$ -pe mp 1
+#$ -m bae
+#$ -M mak@wip.tu-berlin.de
+
+GUROBI_HOME=/afs/math/software/gurobi/7.0.1/
+export GUROBI_HOME
+
+module add gurobi/7.0.1
+module add gams/24.7.4
+gams ./DIETER.gms --scen=$SGE_TASK_ID --nthhour=${nth_hour} --solver=gurobi  -license=/net/homes/ivw/kendzior/gamslice/License.txt -logfile=/net/work/kendzior/output_dieter/dieter.$JOB_ID.log -o=/net/work/kendzior/output_dieter/dieter.$JOB_ID.lst

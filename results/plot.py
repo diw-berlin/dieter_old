@@ -1,19 +1,20 @@
-#import numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 from collections import OrderedDict
+import math as m
 import pandas as pd
 import ResultModule.util as u
 
 report_tech = pd.read_csv("report_tech.csv")
 report_hourly = pd.read_csv("report_hourly.csv")
 summary = pd.read_csv("summary.csv")
-
+report_tech_hourly = pd.read_csv("report_tech_hourly.csv")
 
 u.plot_summary_investment(report_tech)
 
-#def plot_generation_summary(df):
-    
+   
 df_yearly_generation = u.df_per_res_share(report_tech, which='generation', unit='TWh')
+
 
 
 df_yearly_curtailment = u.df_per_res_share(report_tech, which='curtailment', unit='TWh')
@@ -86,35 +87,78 @@ axarr[0].axhline(y=yearly_demand,
 
 
 
+handles = []
+labels = []
+for ax in axarr:
+    
+    new_handles, new_labels = ax.get_legend_handles_labels()
+    handles.extend(new_handles)
+    labels.extend(new_labels)
 
-handles, labels = axarr[0].get_legend_handles_labels()
 by_label = OrderedDict(zip(labels, handles))
-plt.legend(by_label.values(), by_label.keys(),
-           ncol=2,
-           loc='upper right',
-           bbox_to_anchor=(1.03, 1),
-           labelspacing=0.2,
-           frameon=False)
+f.legend(by_label.values(), by_label.keys(),
+         ncol=4,
+         loc='lower left',
+         bbox_to_anchor=(0.105, -0.04),
+         labelspacing=0.2,
+         frameon=False)
+
 
 f.tight_layout()
+f.subplots_adjust(bottom=0.12)
 
 
 
-#plt.bar(stor_capacity_pivot)
 
-report_hourly = pd.read_csv("report_hourly.csv")
+subset1 = ['generation conventional',
+           'generation renewable',
+           'generation storage',
+           'Gas to power']
 
-report_hourly.fillna(0, inplace=True)
+generation_hourly = report_tech_hourly[report_tech_hourly['type'].isin(subset1)]
+generation_hourly = generation_hourly[generation_hourly[generation_hourly.columns[1]] == 100]
 
-report_hourly[report_hourly.columns[5]] = report_hourly[report_hourly.columns[5]].map(lambda x: x[1:])
+generation_hourly = u.rescale_values(generation_hourly, 1000)
+generation_hourly['hour_set'] = generation_hourly[generation_hourly.columns[5]].apply(lambda x: x[1:]).astype(int)
 
-report_hourly[report_hourly.columns[5]] = report_hourly[report_hourly.columns[5]].astype(int)
+def hour_to_week(hour):
+    week = m.trunc(hour/168) + 1
+    return week
+
+generation_hourly['week'] =  generation_hourly['hour_set'].apply(hour_to_week)
+
+
+generation_hourly_pivot = generation_hourly.pivot_table(
+        index='week',
+        columns=generation_hourly.columns[4],
+        values=generation_hourly.columns[7],
+        aggfunc= np.sum)
+
+generation_hourly_pivot.fillna(0, inplace=True)
+generation_hourly_pivot = u.rename_and_order_technologies(generation_hourly_pivot)
+
+generation_hourly_pivot.drop(generation_hourly_pivot.index[52], inplace=True)
+
+hourly_demand['hour_set'] = hourly_demand[hourly_demand.columns[4]].apply(lambda x: x[1:]).astype(int)
+hourly_demand['week'] =  hourly_demand['hour_set'].apply(hour_to_week)
+hourly_demand[hourly_demand.columns[6]] = hourly_demand[hourly_demand.columns[6]].astype(float)
+
+hourly_demand_pivot = hourly_demand.pivot_table(
+        index='week',
+        values=hourly_demand.columns[6],
+        aggfunc= np.sum)
 
 
 
-report_hourly_pivot = report_hourly.pivot_table(index=report_hourly.columns[5], columns=report_hourly.columns[4], values=report_hourly.columns[7])
+rescaled_hourly_demand_pivot = hourly_demand_pivot.div(1000).drop(hourly_demand_pivot.index[52])
 
-report_hourly_pivot.fillna(0, inplace=True)
+rescaled_hourly_demand_pivot.columns = ['Demand']
 
-report_hourly_pivot
+f2, ax = plt.subplots()
 
+generation_hourly_pivot.plot.area(ax=ax,
+                                  color=map(u.colordict_fuel.get, generation_hourly_pivot.columns),
+                                  legend=False)
+
+rescaled_hourly_demand_pivot.plot(ax=ax, color='black', kind='line',
+                                  legend=False)

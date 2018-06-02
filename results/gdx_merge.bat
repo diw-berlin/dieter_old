@@ -1,0 +1,1 @@
+gdxmerge gdx\summary_scen*.gdx

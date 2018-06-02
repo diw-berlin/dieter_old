@@ -1,4 +1,4 @@
-
+$offOrder
 ********************************************************************************
 $ontext
 The Dispatch and Investment Evaluation Tool with Endogenous Renewables (DIETER).
@@ -18,11 +18,15 @@ $offtext
 ***** GLOBAL OPTIONS *****
 **************************
 
+$if not set solver               set solver cplex
+$if not set threads              set threads -1
+$if not set SolveTimeLimit       set SolveTimeLimit 86400
+
 * Set star to skip Excel upload and load data from gdx
 $setglobal skip_Excel "*"
 $setglobal datadir data/
 $setglobal gdxdir gdxfiles/
-$setglobal datafile data_input_v02_10-05-18.xlsx
+$setglobal datafile data_input_für_mario.xlsx
 
 * Choose base year
 $setglobal base_year "'2030'"
@@ -38,12 +42,12 @@ $setglobal reserves_exogenous "*"
 
 $setglobal prosumage ""
 
-$setglobal heat ""
+$setglobal heat "*"
 $setglobal HEAT_NIGHT ""
 
 $setglobal P2G "*"
 
-$setglobal EV ""
+$setglobal EV "*"
 $setglobal EV_EXOG ""
 * Set star to indicate renewables constraint on electric vehicles - DEFAULT is same quota as for the rest of the electricity system
 $setglobal EV_DEFAULT "*"
@@ -63,6 +67,7 @@ $setglobal loop_over_renewable_share "*"
 * Set star to run test variant with each second hour
 * FEATURE DOES NOT WORK WITH HEAT VERSION
 $setglobal second_hour ""
+$if not set nthhour $set nthhour 1
 
 * Set star for no crossover to speed up calculation time by skipping crossover in LP solver
 $setglobal no_crossover ""
@@ -107,12 +112,12 @@ $if "%EV_EXOG%" == "*" $if "%EV_DEFAULT%%EV_100RES%%EV_FREE%" == "***" $abort Ch
 
 sets
 %loop_over_renewable_share%$ontext
-loop_res_share   Solution loop for different shares of renewables       /70,80,95,100/
+loop_res_share   Solution loop for different shares of renewables       /70,80,90,100/
 $ontext
 $offtext
 
 %EV%$ontext
-loop_ev          Solution loop for different fleets of EVs              /4e+6/
+loop_ev          Solution loop for different fleets of EVs              /0,2e+6,4e+6/
 $ontext
 $offtext
 
@@ -121,10 +126,21 @@ loop_prosumage   Solution loop for different prosumer self-consumption levels   
 $ontext
 $offtext
 
+%heat%$ontext
+loop_heat   Solution loop for different heat levels    /0,50,100/
+$ontext
+$offtext
+
+%p2g%$ontext
+loop_p2g   Solution loop for different hydrogen demand    /0,250,500/
+$ontext
+$offtext
+
 %loop_over_renewable_share%      loop_res_share                          /100/
 %EV%                             loop_ev                                 /0/
 %prosumage%                      loop_prosumage                          /0/
 ;
+
 
 
 
@@ -137,7 +153,7 @@ $offtext
 options
 optcr = 0.00
 reslim = 10000000
-lp = cplex
+lp = %solver%
 mip = cplex
 nlp = conopt
 limrow = 0
@@ -295,12 +311,23 @@ $include model.gms
 ***** Options, fixings, report preparation *****
 ********************************************************************************
 
+*Option ResLim = %SolveTimeLimit% ;
+
 * Solver options
 $onecho > cplex.opt
 lpmethod 4
-threads -1
+threads %threads%
 epgap 1e-3
 parallelmode -1
+names 0
+$offecho
+
+$onecho > gurobi.opt
+names 0
+method 2
+presolve 2
+barconvtol 1e-10
+*threads %threads%
 $offecho
 
 %no_crossover%$ontext
@@ -326,18 +353,20 @@ dieter.holdFixed = 1 ;
 phi_min_res = eps ;
 ev_quant = eps ;
 phi_pro_self = eps ;
+gas_demand = eps;
+heat_share = eps;
 
 $eval superscencount 1000
 
 Set
 modelstats       model stats collection                  /modelstat, solvestat, resusd/
 superscen        Scenarios                               /scen1*scen%superscencount%/
-map(superscen,loop_res_share,loop_ev,loop_prosumage)    /#superscen:(#loop_res_share.#loop_ev.#loop_prosumage)/
+map(superscen,loop_res_share,loop_ev,loop_prosumage, loop_heat, loop_p2g)    /#superscen:(#loop_res_share.#loop_ev.#loop_prosumage.#loop_heat.#loop_p2g)/
 ;
 
 set
 scen(superscen);
-scen(superscen) = yes$( sum((loop_res_share,loop_ev,loop_prosumage) , map(superscen,loop_res_share,loop_ev,loop_prosumage)) )    ;
+scen(superscen) = yes$( sum((loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g) , map(superscen,loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g)) )    ;
 
 Parameters
 gussoptions                              /Logoption 2, Optfile 1, Skipbasecase 1/
@@ -345,11 +374,15 @@ modstats(superscen, modelstats)
 min_res
 number_ev
 pro_selfcon
+heat_level
+hydrogen_demand
 ;
 
-min_res(scen) = sum( (loop_res_share,loop_ev,loop_prosumage)$map(scen,loop_res_share,loop_ev,loop_prosumage) , loop_res_share.val/100 ) ;
-number_ev(scen) = sum( (loop_res_share,loop_ev,loop_prosumage)$map(scen,loop_res_share,loop_ev,loop_prosumage) , loop_ev.val ) ;
-pro_selfcon(scen) = sum( (loop_res_share,loop_ev,loop_prosumage)$map(scen,loop_res_share,loop_ev,loop_prosumage) , loop_prosumage.val/100 ) ;
+min_res(scen) = sum( (loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g)$map(scen,loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g) , loop_res_share.val/100 ) ;
+number_ev(scen) = sum( (loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g)$map(scen,loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g) , loop_ev.val ) ;
+pro_selfcon(scen) = sum( (loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g)$map(scen,loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g) , loop_prosumage.val/100 ) ;
+heat_level(scen) = sum( (loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g)$map(scen,loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g) , loop_heat.val/100 ) ;
+hydrogen_demand(scen) = sum( (loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g)$map(scen,loop_res_share,loop_ev,loop_prosumage,loop_heat, loop_p2g) , loop_p2g.val * 1000000/8760) ;
 
 Parameters
 * Equations
@@ -360,123 +393,123 @@ marginal_con9b(superscen,*,*,*)
 
 * Basic
 lev_Z(superscen)
-lev_G_L(superscen,n,tech,h)
-lev_G_UP(superscen,n,tech,h)
-lev_G_DO(superscen,n,tech,h)
-lev_G_RES(superscen,n,tech,h)
-lev_CU(superscen,n,tech,h)
-lev_STO_IN(superscen,n,sto,h)
-lev_STO_OUT(superscen,n,sto,h)
-lev_STO_L(superscen,n,sto,h)
+lev_G_L(superscen,n,tech,h_full)
+lev_G_UP(superscen,n,tech,h_full)
+lev_G_DO(superscen,n,tech,h_full)
+lev_G_RES(superscen,n,tech,h_full)
+lev_CU(superscen,n,tech,h_full)
+lev_STO_IN(superscen,n,sto,h_full)
+lev_STO_OUT(superscen,n,sto,h_full)
+lev_STO_L(superscen,n,sto,h_full)
 lev_N_TECH(superscen,n,tech)
 lev_N_STO_E(superscen,n,sto)
 lev_N_STO_P(superscen,n,sto)
 lev_NTC(superscen,l)
-lev_F(superscen,l,h)
-lev_RSVR_OUT(superscen,n,rsvr,h)
-lev_RSVR_L(superscen,n,rsvr,h)
+lev_F(superscen,l,h_full)
+lev_RSVR_OUT(superscen,n,rsvr,h_full)
+lev_RSVR_L(superscen,n,rsvr,h_full)
 lev_N_RSVR_E(superscen,n,rsvr)
 lev_N_RSVR_P(superscen,n,rsvr)
 
 * EV
-lev_EV_CHARGE(superscen,n,ev,h)
-lev_EV_DISCHARGE(superscen,n,ev,h)
-lev_EV_L(superscen,n,ev,h)
-lev_EV_PHEVFUEL(superscen,n,ev,h)
-lev_EV_GED(superscen,n,ev,h)
+lev_EV_CHARGE(superscen,n,ev,h_full)
+lev_EV_DISCHARGE(superscen,n,ev,h_full)
+lev_EV_L(superscen,n,ev,h_full)
+lev_EV_PHEVFUEL(superscen,n,ev,h_full)
+lev_EV_GED(superscen,n,ev,h_full)
 
 * DSM
-lev_DSM_CU(superscen,n,dsm,h)
-lev_DSM_UP(superscen,n,dsm,h)
-lev_DSM_DO(superscen,n,dsm,h,hh)
-lev_DSM_UP_DEMAND(superscen,n,dsm,h)
-lev_DSM_DO_DEMAND(superscen,n,dsm,h)
+lev_DSM_CU(superscen,n,dsm,h_full)
+lev_DSM_UP(superscen,n,dsm,h_full)
+lev_DSM_DO(superscen,n,dsm,h_full,hh_full)
+lev_DSM_UP_DEMAND(superscen,n,dsm,h_full)
+lev_DSM_DO_DEMAND(superscen,n,dsm,h_full)
 lev_N_DSM_CU(superscen,n,dsm)
 lev_N_DSM_SHIFT(superscen,n,dsm)
 
 * Reserves
-lev_RP_DIS(superscen,n,reserves,tech,h)
-lev_RP_NONDIS(superscen,n,reserves,tech,h)
-lev_RP_STO_IN(superscen,n,reserves,sto,h)
-lev_RP_STO_OUT(superscen,n,reserves,sto,h)
-lev_RP_RSVR(superscen,n,reserves,rsvr,h)
+lev_RP_DIS(superscen,n,reserves,tech,h_full)
+lev_RP_NONDIS(superscen,n,reserves,tech,h_full)
+lev_RP_STO_IN(superscen,n,reserves,sto,h_full)
+lev_RP_STO_OUT(superscen,n,reserves,sto,h_full)
+lev_RP_RSVR(superscen,n,reserves,rsvr,h_full)
 
 * EV & reserves
-lev_RP_EV_V2G(superscen,n,reserves,ev,h)
-lev_RP_EV_G2V(superscen,n,reserves,ev,h)
+lev_RP_EV_V2G(superscen,n,reserves,ev,h_full)
+lev_RP_EV_G2V(superscen,n,reserves,ev,h_full)
 
 * DSM $ reserves
-lev_RP_DSM_CU(superscen,n,reserves,dsm,h)
-lev_RP_DSM_SHIFT(superscen,n,reserves,dsm,h)
+lev_RP_DSM_CU(superscen,n,reserves,dsm,h_full)
+lev_RP_DSM_SHIFT(superscen,n,reserves,dsm,h_full)
 
 * Prosumage
-lev_CU_PRO(superscen,n,tech,h)
-lev_G_MARKET_PRO2M(superscen,n,tech,h)
-lev_G_MARKET_M2PRO(superscen,n,h)
-lev_G_RES_PRO(superscen,n,tech,h)
-lev_STO_IN_PRO2PRO(superscen,n,tech,sto,h)
-lev_STO_IN_PRO2M(superscen,n,tech,sto,h)
-lev_STO_IN_M2PRO(superscen,n,sto,h)
-lev_STO_IN_M2M(superscen,n,sto,h)
-lev_STO_OUT_PRO2PRO(superscen,n,sto,h)
-lev_STO_OUT_PRO2M(superscen,n,sto,h)
-lev_STO_OUT_M2PRO(superscen,n,sto,h)
-lev_STO_OUT_M2M(superscen,n,sto,h)
-lev_STO_L_PRO2PRO(superscen,n,sto,h)
-lev_STO_L_PRO2M(superscen,n,sto,h)
-lev_STO_L_M2PRO(superscen,n,sto,h)
-lev_STO_L_M2M(superscen,n,sto,h)
+lev_CU_PRO(superscen,n,tech,h_full)
+lev_G_MARKET_PRO2M(superscen,n,tech,h_full)
+lev_G_MARKET_M2PRO(superscen,n,h_full)
+lev_G_RES_PRO(superscen,n,tech,h_full)
+lev_STO_IN_PRO2PRO(superscen,n,tech,sto,h_full)
+lev_STO_IN_PRO2M(superscen,n,tech,sto,h_full)
+lev_STO_IN_M2PRO(superscen,n,sto,h_full)
+lev_STO_IN_M2M(superscen,n,sto,h_full)
+lev_STO_OUT_PRO2PRO(superscen,n,sto,h_full)
+lev_STO_OUT_PRO2M(superscen,n,sto,h_full)
+lev_STO_OUT_M2PRO(superscen,n,sto,h_full)
+lev_STO_OUT_M2M(superscen,n,sto,h_full)
+lev_STO_L_PRO2PRO(superscen,n,sto,h_full)
+lev_STO_L_PRO2M(superscen,n,sto,h_full)
+lev_STO_L_M2PRO(superscen,n,sto,h_full)
+lev_STO_L_M2M(superscen,n,sto,h_full)
 lev_N_STO_E_PRO(superscen,n,sto)
 lev_N_STO_P_PRO(superscen,n,sto)
-lev_STO_L_PRO(superscen,n,sto,h)
+lev_STO_L_PRO(superscen,n,sto,h_full)
 lev_N_RES_PRO(superscen,n,tech)
 
 * Heat
-lev_H_DIR(superscen,n,bu,ch,h)
-lev_H_SETS_LEV(superscen,n,bu,ch,h)
-lev_H_SETS_IN(superscen,n,bu,ch,h)
-lev_H_SETS_OUT(superscen,n,bu,ch,h)
-lev_H_HP_IN(superscen,n,bu,ch,h)
-lev_H_STO_LEV(superscen,n,bu,ch,h)
-lev_H_STO_IN_HP(superscen,n,bu,ch,h)
-lev_H_STO_IN_ELECTRIC(superscen,n,bu,ch,h)
-lev_H_ELECTRIC_IN(superscen,n,bu,ch,h)
-lev_H_STO_IN_FOSSIL(superscen,n,bu,ch,h)
-lev_H_STO_OUT(superscen,n,bu,ch,h)
+lev_H_DIR(superscen,n,bu,ch,h_full)
+lev_H_SETS_LEV(superscen,n,bu,ch,h_full)
+lev_H_SETS_IN(superscen,n,bu,ch,h_full)
+lev_H_SETS_OUT(superscen,n,bu,ch,h_full)
+lev_H_HP_IN(superscen,n,bu,ch,h_full)
+lev_H_STO_LEV(superscen,n,bu,ch,h_full)
+lev_H_STO_IN_HP(superscen,n,bu,ch,h_full)
+lev_H_STO_IN_ELECTRIC(superscen,n,bu,ch,h_full)
+lev_H_ELECTRIC_IN(superscen,n,bu,ch,h_full)
+lev_H_STO_IN_FOSSIL(superscen,n,bu,ch,h_full)
+lev_H_STO_OUT(superscen,n,bu,ch,h_full)
 
-lev_H_DHW_STO(superscen,n,bu,ch,h)
-lev_H_DHW_STO_OUT(superscen,n,bu,ch,h)
-lev_H_DHW_DIR(superscen,n,bu,ch,h)
+lev_H_DHW_STO(superscen,n,bu,ch,h_full)
+lev_H_DHW_STO_OUT(superscen,n,bu,ch,h_full)
+lev_H_DHW_DIR(superscen,n,bu,ch,h_full)
 
-lev_H_DHW_AUX_ELEC_IN(superscen,n,bu,ch,h)
-lev_H_DHW_AUX_LEV(superscen,n,bu,ch,h)
-lev_H_DHW_AUX_OUT(superscen,n,bu,ch,h)
+lev_H_DHW_AUX_ELEC_IN(superscen,n,bu,ch,h_full)
+lev_H_DHW_AUX_LEV(superscen,n,bu,ch,h_full)
+lev_H_DHW_AUX_OUT(superscen,n,bu,ch,h_full)
 
 
-lev_RP_SETS(superscen,n,reserves,bu,ch,h)
-lev_RP_HP(superscen,n,reserves,bu,ch,h)
-lev_RP_H_ELEC(superscen,n,reserves,bu,ch,h)
-lev_RP_SETS_AUX(superscen,n,reserves,bu,ch,h)
+lev_RP_SETS(superscen,n,reserves,bu,ch,h_full)
+lev_RP_HP(superscen,n,reserves,bu,ch,h_full)
+lev_RP_H_ELEC(superscen,n,reserves,bu,ch,h_full)
+lev_RP_SETS_AUX(superscen,n,reserves,bu,ch,h_full)
 
 * P2G
-lev_G_P2G(superscen,n,p2g,h)
-lev_G_G2P(superscen,n,p2g,h)
-lev_GS_STO_IN(superscen,n,p2g,h)
-lev_GS_STO_OUT(superscen,n,p2g,h)
-lev_GS_STO_L(superscen,n,p2g,h)
+lev_G_P2G(superscen,n,p2g,h_full)
+lev_G_G2P(superscen,n,p2g,h_full)
+lev_GS_STO_IN(superscen,n,p2g,h_full)
+lev_GS_STO_OUT(superscen,n,p2g,h_full)
+lev_GS_STO_L(superscen,n,p2g,h_full)
 lev_N_GS(superscen,n,p2g)
 lev_N_P2G(superscen,n,p2g)
 lev_N_G2P(superscen,n,p2g)
 
 * Infeasibility
-lev_G_INFES(superscen,n,h)
-lev_G_P2G_INFEAS(superscen,n,h)
+lev_G_INFES(superscen,n,h_full)
+lev_G_P2G_INFEAS(superscen,n,h_full)
 ;
 
 
 * Inclusion of scenario and fixing
 $include fix.gms
-$include scenario.gms
+$include Scenario.gms
 
 
 * Definition of dictionary set for GUSS tool
@@ -491,6 +524,16 @@ $ontext
 $offtext
 %prosumage%$ontext
 phi_pro_self     .param          .pro_selfcon
+$ontext
+$offtext
+
+%heat%$ontext
+heat_share       .param          .heat_level
+$ontext
+$offtext
+
+%p2g%$ontext
+gas_demand       .param          .hydrogen_demand
 $ontext
 $offtext
 
@@ -645,13 +688,15 @@ G_INFES          .level          .lev_G_INFES
 /
 ;
 
-*$stop
+$include parallel_run.gms
+
+
 solve DIETER using lp min Z scenario dict;
 
 * Reporting
-$include report.gms
+$include report2.gms
 
-
+$stop
 execute_unload "results", report, report_tech, report_node, report_line, report_tech_hours, report_hours, report_cost
 %prosumage%$ontext
 , report_prosumage, report_prosumage_tech, report_prosumage_tech_hours, report_market, report_market_tech, report_market_tech_hours

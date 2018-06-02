@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from collections import OrderedDict
 
 colordict_fuel = {
     'Nuclear': (174/255, 57/255, 63/255),
@@ -19,7 +20,8 @@ colordict_fuel = {
     'PSP': (103/255, 130/255, 228/255),
     'Sto1': (67/255, 69/255, 102/255),
     'Sto7': (174/255, 18/255, 58/255),
-    'Hydrogen vessel': (0/255, 48/255, 61/255),
+    'Vessel': (150/255, 255/255, 255/255),
+    'Cavern': (0/255, 48/255, 61/255),
     'Alkaline': (38/255, 198/255, 218/255),
     'PEM': (0/255, 122/255, 140/255),
     'Investment Generation': (0.121, 0.188, 0.492),
@@ -38,7 +40,7 @@ rename_dict = {'CCGT': 'CCGT',
                'nuc': 'Nuclear',
                'ror': 'Run-of-River',
                'Alka_p2g': 'Alkaline',
-               'PEM_p2g': 'PEM',
+               'PEM_g2p': 'PEM',
                'Sto7': 'Sto7',
                'Sto5': 'PSP',
                'Sto1': 'Sto1',
@@ -46,7 +48,8 @@ rename_dict = {'CCGT': 'CCGT',
                'wind_off': 'Wind offshore',
                'wind_on': 'Wind onshore',
                'bio': 'Biomass',
-               'vessel': 'Hydrogen vessel',
+               'vessel': 'Vessel',
+               'cavern': 'Cavern',
                'pv': 'Solar PV',
                'hc': 'Hard coal',
                'lig': 'Lignite',
@@ -72,7 +75,9 @@ technology_order = ['Nuclear',
                     'Sto6',
                     'Sto7',
                     'Alkaline',
-                    'PEM'
+                    'PEM',
+                    'Vessel',
+                    'Cavern'
                     ]
 
 scale_dict = {'MW': 1,
@@ -164,15 +169,25 @@ def plot_summary_investment(df):
                 title=titles[i],
                 color=map(colordict_fuel.get, df.columns))
     
+    handles = []
+    labels = []
+    for ax in axarr:
+        
+        new_handles, new_labels = ax.get_legend_handles_labels()
+        handles.extend(new_handles)
+        labels.extend(new_labels)
 
+    by_label = OrderedDict(zip(labels, handles))
     
-    f.legend(ncol=5, loc='lower left',
+    f.legend(by_label.values(),
+             by_label.keys(),
+             ncol=5, loc='lower left',
              bbox_to_anchor=(0.06, -0.01),
              labelspacing=0.2,
              frameon=False)
     
     f.tight_layout()
-    f.subplots_adjust(bottom=0.16, top=0.96)
+    f.subplots_adjust(bottom=0.18, top=0.96)
      
     
     f.savefig("plot_summary_investment.pdf")

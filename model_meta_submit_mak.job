@@ -1,0 +1,14 @@
+#!/bin/bash --login
+#$ -cwd
+#$ -N dieter
+#$ -o /net/work/kendzior/out/MetaArrayJobs/dynelmod.$JOB_ID.$TASK_ID.out
+#$ -j y
+#$ -l h_rt=600
+#$ -l mem_free=1G
+#$ -pe mp 1
+#$ -m bae
+#$ -M mak@wip.tu-berlin.de
+
+
+qsub -t 1:108 -v nth_hour='1' -l mem_free=15G -l h_rt=12:00:00 model_submit_mak.job
+qsub -t 1:108 -v nth_hour='2' -l mem_free=15G -l h_rt=12:00:00 model_submit_mak.job

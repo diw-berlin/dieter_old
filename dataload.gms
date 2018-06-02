@@ -33,7 +33,8 @@ p2g
  fuelcell(p2g)                Set of gas to power technologies
  gasstorage(p2g)
 year                     Base year for temporal data
-h                        Hours
+h_full                   /h1*h8760/
+h(h_full)                Hours
 n                        Nodes
 l                        Lines
 ev                       EV types
@@ -85,8 +86,8 @@ headers_p2g
  p2g_type
 ;
 
-
-
+h('h1') =Yes;
+h(h_full)$(mod(ord(h_full), %nthhour%) = 0) = Yes;
 
 ***************  PARAMETERS  ***************************************************
 
@@ -259,8 +260,8 @@ temp_source              Heat pumps - source temperature in degrees Celsius
 d_dhw_upload
 d_dhw_y
 d_dhw
-nets_profile(h)
-
+nets_profile
+heat_share
 
 ***** P2G *****
 p2g_inv_overnight
@@ -339,22 +340,22 @@ technology_data_upload(n,tech,tech_res_con,tech_dispatch,headers_tech)
 technology_data(n,tech,headers_tech)
 storage_data(n,sto,headers_sto)
 reservoir_data(n,rsvr,headers_reservoir)
-time_data_upload(h,n,year,headers_time)
+time_data_upload(h_full,n,year,headers_time)
 dsm_data_upload(n,dsm,dsm_type,headers_dsm)
 dsm_data(n,dsm,headers_dsm)
 topology_data(l,headers_topology)
 ev_data(n,ev,headers_ev)
-ev_time_data_upload(h,headers_time_ev,ev)
+ev_time_data_upload(h_full,headers_time_ev,ev)
 prosumage_data_generation(n,tech,headers_prosumage_generation)
 prosumage_data_storage(n,sto,headers_prosumage_storage)
-reserves_time_data_activation(h,year,reserves)
-reserves_time_data_provision(h,year,reserves)
+reserves_time_data_activation(h_full,year,reserves)
+reserves_time_data_provision(h_full,year,reserves)
 reserves_data_upload(n,reserves,reserves_up_down,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)
 reserves_data(n,reserves,headers_reserves)
 heat_data_upload(n,bu,ch,heat_storage,heat_hp,heat_elec,heat_fossil,headers_heat)
 heat_data(n,bu,ch,headers_heat)
-dh_upload(h,n,year,headers_time_heat,bu)
-d_dhw_upload(h,n,year,headers_time_heat,bu)
+dh_upload(h_full,n,year,headers_time_heat,bu)
+d_dhw_upload(h_full,n,year,headers_time_heat,bu)
 temp_source_upload
 p2g_data_upload(n,p2g,p2g_type,headers_p2g)
 p2g_data(n,p2g,headers_p2g)
@@ -461,7 +462,7 @@ $offtext
 $onecho >%gdxdir%temp2.tmp
 se=0
 
-dset=h                           rng=basic!A6            rdim=1 cdim=0
+*dset=h_full                           rng=basic!A6            rdim=1 cdim=0
 dset=headers_time                rng=basic!B5            rdim=0 cdim=1
 dset=year                        rng=basic!B4            rdim=0 cdim=1
 par=time_data_upload             rng=basic!A3            rdim=1 cdim=3
@@ -487,7 +488,7 @@ $offecho
 %skip_Excel%$call "gdxxrw %datadir%time_series.xlsx @%gdxdir%temp2.tmp o=%gdxdir%time_series";
 
 $GDXin %gdxdir%time_series.gdx
-$load h headers_time year time_data_upload
+$load headers_time year time_data_upload
 $load headers_time_ev ev_time_data_upload
 $load reserves_time_data_activation
 $load reserves_time_data_provision
@@ -498,7 +499,7 @@ $load headers_time_dhw d_dhw_upload nets_profile
 ;
 
 
-*$stop
+
 
 ***************  ASSIGNMENTS  **************************************************
 
@@ -506,6 +507,7 @@ $load headers_time_dhw d_dhw_upload nets_profile
 
 ***** Aliases *****
 alias (h,hh) ;
+alias (h_full,hh_full) ;
 alias (res,resres) ;
 alias (reserves,reservesreserves) ;
 alias (nondis,nondisnondis) ;
@@ -731,7 +733,7 @@ eta_fuelcell(n,fuelcell) = p2g_data(n,fuelcell,'efficiency') ;
 eta_gs_out(n,gasstorage) = p2g_data(n,gasstorage,'eta_out') ;
 eta_gs_in(n,gasstorage) = p2g_data(n,gasstorage,'eta_in') ;
 eta_gs_hourly(n,gasstorage) = p2g_data(n,gasstorage,'eta_hourly') ;
-gas_demand(n,h) = 0 ;
+
 
 
 ***************  CALCULATE DERIVED PARAMETERS  *********************************
@@ -800,7 +802,7 @@ c_fix_sto(n,sto) = c_fix_sto(n,sto)*card(h)/8760 ;
 c_fix_dsm_cu(n,dsm_curt) = c_fix_dsm_cu(n,dsm_curt)*card(h)/8760 ;
 c_fix_dsm_shift(n,dsm_shift) = c_fix_dsm_shift(n,dsm_shift)*card(h)/8760 ;
 c_fix_rsvr(n,rsvr) = c_fix_rsvr(n,rsvr)*card(h)/8760 ;
-c_fix_p2g(n,p2g) = c_fix_p2g(n,p2g)*card(h)/8760 ;  
+c_fix_p2g(n,p2g) = c_fix_p2g(n,p2g)*card(h)/8760 ;
 
 m_e(n,'bio') = m_e(n,'bio')*card(h)/8760 ;
 
@@ -828,8 +830,8 @@ check_heat_agg = smax( (n,bu) , check_heat(n,bu) ) ;
 ***************  Infeasibility *************************************************
 
 Positive variable
-G_INFES(n,h)
-G_P2G_INFEAS(n,h)
+G_INFES(n,h_full)
+G_P2G_INFEAS(n,h_full)
 ;
 
 Parameter
