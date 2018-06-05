@@ -18,9 +18,8 @@ $offtext
 ***** GLOBAL OPTIONS *****
 **************************
 
-$if not set solver               set solver cplex
-$if not set threads              set threads -1
-$if not set SolveTimeLimit       set SolveTimeLimit 86400
+$if not set solver               $setglobal solver cplex
+$if not set SolveTimeLimit       $setglobal SolveTimeLimit 86400
 
 * Set star to skip Excel upload and load data from gdx
 $setglobal skip_Excel "*"
@@ -42,7 +41,7 @@ $setglobal reserves_exogenous "*"
 
 $setglobal prosumage ""
 
-$setglobal heat "*"
+$setglobal heat ""
 $setglobal HEAT_NIGHT ""
 
 $setglobal P2G "*"
@@ -112,7 +111,7 @@ $if "%EV_EXOG%" == "*" $if "%EV_DEFAULT%%EV_100RES%%EV_FREE%" == "***" $abort Ch
 
 sets
 %loop_over_renewable_share%$ontext
-loop_res_share   Solution loop for different shares of renewables       /70,80,90,100/
+loop_res_share   Solution loop for different shares of renewables       /70,75,80,85,90,95,100/
 $ontext
 $offtext
 
@@ -132,13 +131,15 @@ $ontext
 $offtext
 
 %p2g%$ontext
-loop_p2g   Solution loop for different hydrogen demand    /0,250,500/
+loop_p2g   Solution loop for different hydrogen demand    /0,100,200,300,400,500/
 $ontext
 $offtext
 
 %loop_over_renewable_share%      loop_res_share                          /100/
 %EV%                             loop_ev                                 /0/
 %prosumage%                      loop_prosumage                          /0/
+%heat%                           loop_heat                               /0/
+%p2g%                            loop_p2g                                /0/
 ;
 
 
@@ -316,7 +317,7 @@ $include model.gms
 * Solver options
 $onecho > cplex.opt
 lpmethod 4
-threads %threads%
+threads -1
 epgap 1e-3
 parallelmode -1
 names 0
@@ -327,7 +328,7 @@ names 0
 method 2
 presolve 2
 barconvtol 1e-10
-*threads %threads%
+threads -1
 $offecho
 
 %no_crossover%$ontext

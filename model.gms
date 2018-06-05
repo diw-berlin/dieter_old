@@ -353,6 +353,7 @@ $offtext
                  + sum( (n,rsvr) , c_fix_rsvr(n,rsvr) * N_RSVR_P(n,rsvr) )
 %heat%$ontext
                  + sum( (n,bu,hfo,h) , pen_heat_fuel(n,bu,hfo) * H_STO_IN_FOSSIL(n,bu,hfo,h))
+                 + sum((n,bu,hp,h), c_infes * H_Infeas(n,bu,hp,h) )
 $ontext
 $offtext
                  + sum( (n,h) , c_infes * G_INFES(n,h) )
@@ -1199,7 +1200,7 @@ con14m_sets_aux_dhw_maxlev(n,bu,ch,h)$(feat_node('heat',n) AND theta_sets(n,bu,c
 
 * HEAT PUMPS
 con14n_hp_in(n,bu,hp,h)$(feat_node('heat',n) AND theta_hp(n,bu,hp))..
-         H_STO_IN_HP(n,bu,hp,h) =E= (H_HP_IN(n,bu,hp,h)
+         H_STO_IN_HP(n,bu,hp,h) - H_Infeas(n,bu,hp,h) =E= (H_HP_IN(n,bu,hp,h)
 %reserves%$ontext
          - theta_hp(n,bu,hp) * (sum( reserves_up , RP_HP(n,reserves_up,bu,hp,h) * phi_reserves_call(n,reserves_up,h) )
          - sum( reserves_do , RP_HP(n,reserves_do,bu,hp,h) * phi_reserves_call(n,reserves_do,h) ))

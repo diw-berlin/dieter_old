@@ -832,6 +832,7 @@ check_heat_agg = smax( (n,bu) , check_heat(n,bu) ) ;
 Positive variable
 G_INFES(n,h_full)
 G_P2G_INFEAS(n,h_full)
+H_Infeas(n,bu,ch,h_full)
 ;
 
 Parameter

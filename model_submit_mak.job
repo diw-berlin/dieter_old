@@ -14,4 +14,4 @@ export GUROBI_HOME
 
 module add gurobi/7.0.1
 module add gams/24.7.4
-gams ./DIETER.gms --scen=$SGE_TASK_ID --nthhour=${nth_hour} --solver=gurobi  -license=/net/homes/ivw/kendzior/gamslice/License.txt -logfile=/net/work/kendzior/output_dieter/dieter.$JOB_ID.log -o=/net/work/kendzior/output_dieter/dieter.$JOB_ID.lst
+gams ./DIETER.gms ErrMsg=1 --scen=$SGE_TASK_ID --nthhour=${nth_hour}  -license=/net/homes/ivw/kendzior/gamslice/License.txt -logfile=/net/work/kendzior/output_dieter/dieter.$JOB_ID.log -o=/net/work/kendzior/output_dieter/dieter.$JOB_ID.lst
