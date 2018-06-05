@@ -3,8 +3,8 @@
 phi_min_res = min_res('scen%scen%') ;
 ev_quant = number_ev('scen%scen%') ;
 phi_pro_self = pro_selfcon('scen%scen%') ;
-gas_demand = heat_level('scen%scen%');
-heat_share = hydrogen_demand('scen%scen%') ;
+gas_demand = hydrogen_demand('scen%scen%');
+heat_share = heat_level('scen%scen%');
 
 
 solve DIETER using lp min Z ;

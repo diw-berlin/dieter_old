@@ -507,7 +507,7 @@ con4a_stolev_start(sto,h,n)$(ord(h) = 1)..
         STO_L(n,sto,h) =E= phi_sto_ini(n,sto) * N_STO_E(n,sto) + STO_IN(n,sto,h)*(1+eta_sto(n,sto))/2 - STO_OUT(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con4b_stolev(sto,h,n)$((ord(h)>1) AND m_sto_e(n,sto))..
+con4b_stolev(sto,h,n)$((ord(h)>1))..
          STO_L(n,sto,h) =E= STO_L(n,sto,h-1) + STO_IN(n,sto,h)*(1+eta_sto(n,sto))/2 - STO_OUT(n,sto,h)/(1+eta_sto(n,sto))*2
 %reserves%$ontext
          + sum( reserves_do , phi_reserves_call(n,reserves_do,h) * ( RP_STO_IN(n,reserves_do,sto,h)*(1+eta_sto(n,sto))/2 + RP_STO_OUT(n,reserves_do,sto,h)/(1+eta_sto(n,sto))*2 ))
@@ -569,7 +569,7 @@ $offtext
         =L= N_STO_E(n,sto) - STO_L(n,sto,h-1)
 ;
 
-con4j_ending(sto,h,n)$(ord(h) = card(h) AND m_sto_e(n,sto))..
+con4j_ending(sto,h,n)$(ord(h) = card(h))..
          STO_L(n,sto,h) =E= phi_sto_ini(n,sto) * N_STO_E(n,sto)
 ;
 
@@ -1200,7 +1200,7 @@ con14m_sets_aux_dhw_maxlev(n,bu,ch,h)$(feat_node('heat',n) AND theta_sets(n,bu,c
 
 * HEAT PUMPS
 con14n_hp_in(n,bu,hp,h)$(feat_node('heat',n) AND theta_hp(n,bu,hp))..
-         H_STO_IN_HP(n,bu,hp,h) - H_Infeas(n,bu,hp,h) =E= (H_HP_IN(n,bu,hp,h)
+         H_STO_IN_HP(n,bu,hp,h)  =E= (H_HP_IN(n,bu,hp,h)
 %reserves%$ontext
          - theta_hp(n,bu,hp) * (sum( reserves_up , RP_HP(n,reserves_up,bu,hp,h) * phi_reserves_call(n,reserves_up,h) )
          - sum( reserves_do , RP_HP(n,reserves_do,bu,hp,h) * phi_reserves_call(n,reserves_do,h) ))
@@ -1377,8 +1377,8 @@ $ontext
 $offtext
 
 con8a_max_I_power
-con8b_max_I_sto_e
-con8c_max_I_sto_p
+*con8b_max_I_sto_e
+*con8c_max_I_sto_p
 %DSM%$ontext
   con8d_max_I_dsm_cu
   con8e_max_I_dsm_shift_pos

@@ -117,7 +117,8 @@ class DieterResult():
                               0: "Value"}
 
     columns_mapper = {"Portfolio_Generation": columns_mapper_generation,
-                      "Portfolio_Storages": columns_mapper_storage}
+                      "Portfolio_Storages": columns_mapper_storage,
+                      "Investment_Storages": columns_mapper_generation}
 
 
     def __init__(self):
@@ -127,3 +128,5 @@ class DieterResult():
         self.Capacities = extractParameterFromGdx("merged.gdx", "Portfolio_Generation")
 
         self.Storages = extractParameterFromGdx("merged.gdx", "Portfolio_Storages")
+
+        self.InvestmentStorages = extractParameterFromGdx("merged.gdx", "Investment_Storages")

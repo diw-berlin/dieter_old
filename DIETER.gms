@@ -41,7 +41,7 @@ $setglobal reserves_exogenous "*"
 
 $setglobal prosumage ""
 
-$setglobal heat ""
+$setglobal heat "*"
 $setglobal HEAT_NIGHT ""
 
 $setglobal P2G "*"
@@ -111,7 +111,7 @@ $if "%EV_EXOG%" == "*" $if "%EV_DEFAULT%%EV_100RES%%EV_FREE%" == "***" $abort Ch
 
 sets
 %loop_over_renewable_share%$ontext
-loop_res_share   Solution loop for different shares of renewables       /70,75,80,85,90,95,100/
+loop_res_share   Solution loop for different shares of renewables       /70,80,90,100/
 $ontext
 $offtext
 
