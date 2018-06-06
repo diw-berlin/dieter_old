@@ -111,7 +111,7 @@ $if "%EV_EXOG%" == "*" $if "%EV_DEFAULT%%EV_100RES%%EV_FREE%" == "***" $abort Ch
 
 sets
 %loop_over_renewable_share%$ontext
-loop_res_share   Solution loop for different shares of renewables       /70,80,90,100/
+loop_res_share   Solution loop for different shares of renewables       /70,75,80,85,90,95,100/
 $ontext
 $offtext
 
@@ -131,7 +131,7 @@ $ontext
 $offtext
 
 %p2g%$ontext
-loop_p2g   Solution loop for different hydrogen demand    /0,100,200,300,400,500/
+loop_p2g   Solution loop for different hydrogen demand    /0,250,500/
 $ontext
 $offtext
 

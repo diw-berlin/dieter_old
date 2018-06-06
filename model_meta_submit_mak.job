@@ -10,5 +10,5 @@
 #$ -M mak@wip.tu-berlin.de
 
 
-qsub -t 1:216 -v nth_hour='1' -l mem_free=15G -l h_rt=8:00:00 model_submit_mak.job
+qsub -t 1:186 -v nth_hour='1' -l mem_free=15G -l h_rt=12:00:00 model_submit_mak.job
 

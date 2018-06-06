@@ -11,6 +11,7 @@ def readGdxFile(filename, parameter):
     if os.path.isfile(filename) is True:
         with gdxr.GdxFile(filename) as file:
             # Read the parameter and convert to usable data frame
+            print("Reading file: ",filename)
             return file.get(parameter).to_frame().reset_index()
     else:
         raise FileNotFoundError('file %s not found' % filename)
@@ -94,7 +95,8 @@ class DieterResult():
                        'pv': 'Solar PV',
                        'hc': 'Hard coal',
                        'lig': 'Lignite',
-                       'other': 'Other'}
+                       'other': 'Other',
+                       'battery': 'Battery'}
 
 
     columns_mapper_generation = {"level_0": "ScenarioNumber",
@@ -127,6 +129,8 @@ class DieterResult():
 
         self.Capacities = extractParameterFromGdx("merged.gdx", "Portfolio_Generation")
 
-        self.Storages = extractParameterFromGdx("merged.gdx", "Portfolio_Storages")
+        storages = extractParameterFromGdx("merged.gdx", "Portfolio_Storages")
+        self.EnergyStorages = storages[storages['Type'] == 'Energy']
+        self.PowerStorages = storages[storages['Type'] == 'Power']
 
         self.InvestmentStorages = extractParameterFromGdx("merged.gdx", "Investment_Storages")

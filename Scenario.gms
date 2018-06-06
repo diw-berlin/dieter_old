@@ -67,16 +67,17 @@ N_TECH.up(n,tech)$m_exog_p(n,tech) = m_exog_p(n,tech);
 N_TECH.up(n,'wind_on') = inf ;
 N_TECH.up(n,'wind_off') = inf ;
 N_TECH.up(n,'pv') = inf ;
-N_STO_P.up(n,sto) = inf;
-N_STO_E.up(n,sto) = inf;
-N_STO_P.up(n,sto)$m_exog_sto_p(n,sto) = m_exog_sto_p(n,sto) ;
-N_STO_E.up(n,sto)$m_exog_sto_p(n,sto) = m_exog_sto_e(n,sto) ;
-N_STO_P.up(n,sto) = 50000 ;
-N_STO_E.up(n,sto) = 500000 ;
-N_STO_P.up(n,'sto5') = m_exog_sto_p(n,'sto5') ;
-N_STO_E.up(n,'sto5') = m_exog_sto_e(n,'sto5') ;
-N_STO_P.up(n,'sto7') = 0 ;
-N_STO_E.up(n,'sto7') = 0 ;
+N_STO_P.up(n,sto) = 0;
+N_STO_E.up(n,sto) = 0;
+N_STO_P.up(n,'sto5') = inf ;
+N_STO_E.up(n,'sto5') = 100000 ;
+N_STO_P.up(n,'sto1') = inf ;
+N_STO_E.up(n,'sto1') = inf ;
+
+c_i_p2g('DE','h2_storage') = c_i_sto_e('DE','Sto7');
+c_i_p2g('DE','electrolyzer') = c_i_sto_p('DE','Sto7')/2;
+c_i_p2g('DE','fuelcell') = c_i_sto_p('DE','Sto7')/2;
+
 
 N_RSVR_P.up(n,rsvr) =  m_exog_rsvr_p(n,rsvr) + 0.1 ;
 *NTC.up(l) = m_exog_ntc(l) + 0.1 ;

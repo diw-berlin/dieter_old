@@ -1,53 +1,60 @@
 import ResultModule.dieter_result as result
 import matplotlib.pyplot as plt
+import matplotlib.colors
+import pandas as pd
+import numpy as np
 
 
 results = result.DieterResult()
 
 results.Capacities
-results.Storages
+results.EnergyStorages
+results.PowerStorages
 
-sto = results.Storages[results.Storages['Technology'] == 'Battery']
-sto = sto[sto['Type'] == 'Energy']
-sto
+power = results.PowerStorages
 
-col = ['green','yellow','red']
-fig, ax = plt.subplots()
-for i,ev in enumerate([0,2000000,4000000]):
-     current_df = sto[sto['EV'] == ev]
-     current_df.plot(x='ResShare', y='Value', ax=ax, kind='scatter', label=ev, color=col[i])
+power = power[power['EV'] == 0]
+power = power[power['Heat'] == 0]
+power
 
-fig.show()
+p2g_scen = [0,100,200,300,500]
+
+cmap = plt.cm.Blues
+norm = matplotlib.colors.Normalize(vmin=0, vmax=500)
+
+markers = ['.','o','v','s','p','+']
+f, ax = plt.subplots()
+for i,p2g in enumerate(p2g_scen):
+    current_df = power[power['Hydrogen'] == p2g]
+
+    current_df = pd.pivot_table(current_df, values='Value', index='ResShare', aggfunc=np.sum)
+
+    ax.plot(current_df,
+            label=p2g,
+            color=cmap(norm(p2g))
+            )
+
+f.legend(loc=2, bbox_to_anchor=(0.12,0.84))
 
 
-sto2 = results.Storages[results.Storages['Technology'] == 'Battery']
-sto2 = sto2[sto2['Type'] == 'Energy']
-sto2
-col2 = ['darkgreen','green','yellow','orange', 'red', 'darkred']
-markers = ['x','.','v']
+energy = results.EnergyStorages
 
-fig, ax = plt.subplots()
-for i,p2g in enumerate([0,100,200,300,400,500]):
+energy = energy[energy['EV'] == 0]
+energy = energy[energy['Heat'] == 0]
+energy
 
-    current_df = sto2[sto2['Hydrogen'] == p2g]
+p2g_scen = [0,100,200,300,500]
 
-    for j,ev in enumerate([0,2000000,4000000]):
+markers = ['.','o','v','s','p','+']
+f, ax = plt.subplots()
+for i,p2g in enumerate(p2g_scen):
+    current_df = energy[energy['Hydrogen'] == p2g]
 
-        current_df2 = current_df[current_df['EV'] == ev]
+    current_df = pd.pivot_table(current_df, values='Value', index='ResShare', aggfunc=np.sum)
 
-        current_df2.plot(x='ResShare', y='Value', ax=ax, kind='scatter', label=p2g, color=col2[i], marker=markers[j])
+    ax.plot(current_df,
+            label=p2g,
+            color=cmap(norm(p2g))
+            )
 
-fig.show()
-
-fig, ax = plt.subplots()
-
-for index, group in results.Capacities.groupby(['Technology']):
-    group.plot(x='ResShare', y='Value', kind='scatter', ax=ax, label=index, color=results.dict_FuelColor[index], legend=False)
-    print(index)
-    print(group['Value'])
-
-fig.show()
-
-solar = results.Capacities[results.Capacities['Technology'] == 'Solar PV']
-
-solar.plot(x='ResShare', y='Value', kind='scatter')
+f.legend(loc=2, bbox_to_anchor=(0.14,0.84))
