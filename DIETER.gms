@@ -31,11 +31,11 @@ $setglobal GER_only "*"
 $setglobal DSM ""
 
 $setglobal reserves_endogenous ""
-$setglobal reserves_exogenous "*"
+$setglobal reserves_exogenous ""
 
 $setglobal prosumage ""
 
-$setglobal heat "*"
+$setglobal heat ""
 $setglobal HEAT_NIGHT ""
 
 $setglobal EV ""
@@ -53,11 +53,11 @@ $setglobal ror_parameter ""
 $setglobal ror_variable "*"
 
 * Set star to determine loops, otherwise default 100% renewables
-$setglobal loop_over_renewable_share "*"
+$setglobal loop_over_renewable_share ""
 
 * Set star to run test variant with each second hour
 * FEATURE DOES NOT WORK WITH HEAT VERSION
-$setglobal second_hour ""
+$setglobal second_hour "*"
 
 * Set star for no crossover to speed up calculation time by skipping crossover in LP solver
 $setglobal no_crossover ""
@@ -643,7 +643,7 @@ $offtext
 $ontext
 $offtext
 ;
-
+$stop
 $include report_to_excel.gms
 
 
