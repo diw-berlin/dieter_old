@@ -109,6 +109,8 @@ H_DHW_STO_OUT(n,bu,ch,h)         Heating - domestic hot water: DHW storage outfl
 H_DHW_AUX_ELEC_IN(n,bu,ch,h)     Heating - domestic hot water: electrical energy input
 H_DHW_AUX_LEV(n,bu,ch,h)         Heating - domestic hot water: level of auxiliary hot water tank for SETS
 H_DHW_AUX_OUT(n,bu,ch,h)         Heating - domestic hot water: auxiliary DHW provision for SETS
+
+H_STO_IN_DH(n,bu,ch,h)           Heating: storage inflow from district heating to storage technologies in MWh
 ;
 
 
@@ -256,6 +258,19 @@ con14s_storage_elec_minin
 con14t_storage_level
 con14u_storage_level_start
 con14v_storage_maxlev
+
+* District heating
+con15a_dh_linkage
+con15b_chp_bp_relation
+con15c_chp_pl_lb
+con15d_chp_pl_ub
+con15e_hop
+con15f_fuel_consumption_chp_bp
+con15g_fuel_consumption_chp_pl
+con15h_DH_STO_SoC
+con15i_DH_STO_level_cap
+con15j_DH_STO_IN_cap
+con15k_DH_STO_OUT_cap
 ;
 
 
@@ -274,6 +289,14 @@ obj..
                  + sum( (dis,h,n) , c_do(n,dis)*G_DO(n,dis,h) )
                  + sum( (nondis,h,n) , c_cu(n,nondis)*CU(n,nondis,h) )
                  + sum( (sto,h,n) , c_m_sto(n,sto) * ( STO_OUT(n,sto,h) + STO_IN(n,sto,h) ) )
+%DH%$ontext
+                 + sum( (chp_bp,h,n) , eta(n,chp_bp) * c_m(n,chp_bp)*FC(n,chp_bp,h) )
+                 + sum( (chp_pl,h,n) , eta(n,chp_pl) * c_m(n,chp_pl)*FC(n,chp_pl,h) )
+                 + sum( (hop,h,n) ,                    c_m(n,hop)*Q(n,hop,h) )
+                 + sum( (chp,h,n)$(ord(h)>1) , c_up(n,chp)*G_UP(n,chp,h) )
+                 + sum( (chp,h,n) , c_do(n,chp)*G_DO(n,chp,h) )
+$ontext
+$offtext
 %DSM%$ontext
                  + sum( (dsm_curt,h,n) , c_m_dsm_cu(n,dsm_curt)*DSM_CU(n,dsm_curt,h) )
                  + sum( (dsm_shift,h,n) , c_m_dsm_shift(n,dsm_shift) * DSM_UP_DEMAND(n,dsm_shift,h) )
@@ -366,6 +389,12 @@ $offtext
         + sum( (bu,ch) , theta_sets(n,bu,ch) * (H_SETS_IN(n,bu,ch,hh) + H_DHW_AUX_ELEC_IN(n,bu,ch,hh)) )
         + sum( (bu,hp) , theta_hp(n,bu,hp) * H_HP_IN(n,bu,hp,hh) )
         + sum( (bu,hel) , theta_elec(n,bu,hel) * H_ELECTRIC_IN(n,bu,hel,hh) )
+$ontext
+$offtext
+%DH%$ontext
+*** hier DH Strombedarf einfügen
+        + sum(p2h_dh, H_DH_P2H_IN(n,p2h_dh,hh) )
+
 $ontext
 $offtext
          =E=
@@ -752,6 +781,7 @@ $offtext
         + sum( (bu,ch) , theta_sets(n,bu,ch) * ( RP_SETS(n,reserves_nonprim,bu,ch,h) + RP_SETS_AUX(n,reserves_nonprim,bu,ch,h)) )
         + sum( (bu,ch) , theta_hp(n,bu,ch) * RP_HP(n,reserves_nonprim,bu,ch,h) )
         + sum( (bu,ch) , theta_elec(n,bu,ch) * RP_H_ELEC(n,reserves_nonprim,bu,ch,h) )
+*** hier auch DH p2H berücksichtigen
 $ontext
 $offtext
         =E= (
@@ -783,6 +813,7 @@ $offtext
         + sum( (bu,ch) , theta_sets(n,bu,ch) * ( RP_SETS(n,reserves_nonprim,bu,ch,h) + RP_SETS_AUX(n,reserves_nonprim,bu,ch,h)) )
         + sum( (bu,ch) , theta_hp(n,bu,ch) * RP_HP(n,reserves_nonprim,bu,ch,h) )
         + sum( (bu,ch) , theta_elec(n,bu,ch) * RP_H_ELEC(n,reserves_nonprim,bu,ch,h) )
+*** hier auch DH p2H berücksichtigen
 $ontext
 $offtext
         =E= feat_node('reserves',n) * reserves_exogenous(n,reserves_nonprim,h)$(ord(h) > 1)
@@ -1209,6 +1240,10 @@ con14t_storage_level(n,bu,hst,h)$(feat_node('heat',n) AND theta_storage(n,bu,hst
          H_STO_LEV(n,bu,hst,h)
          =E=
          eta_heat_stat(n,bu,hst) * H_STO_LEV(n,bu,hst,h-1) + theta_hp(n,bu,hst)*H_STO_IN_HP(n,bu,hst,h) + theta_elec(n,bu,hst)*H_STO_IN_ELECTRIC(n,bu,hst,h) + theta_fossil(n,bu,hst) * H_STO_IN_FOSSIL(n,bu,hst,h)
+%DH%$ontext
+         +  theta_dh(n,bu,hst) * H_STO_IN_DH(n,bu,hst,h)
+$ontext
+$offtext
          - H_STO_OUT(n,bu,hst,h) - H_DHW_STO_OUT(n,bu,hst,h)
 ;
 
@@ -1219,6 +1254,71 @@ con14u_storage_level_start(n,bu,hst,h)$(feat_node('heat',n) AND theta_storage(n,
 con14v_storage_maxlev(n,bu,hst,h)$(feat_node('heat',n) AND theta_storage(n,bu,hst))..
          H_STO_LEV(n,bu,hst,h) =L= n_heat_e(n,bu,hst)
 ;
+
+* DISTRICT HEATING
+
+con15a_dh_linkage(n,h)$(feat_node('heat',n) AND theta_dh(n,bu,'dh'))..
+         sum(bu$theta_dh(n,bu,'dh'), H_STO_IN_DH(n,bu,hst,h)) + H_DH_STO_IN(n,h) =E= (sum(chp, Q(n,chp,h)) + sum(hop, Q(n,hop,h)) + H_DH_STO_OUT(n,h) + sum(tech, eta(n,tech) * H_DH_P2H_IN(n,tech,h))) * (1-dh_tl)
+;
+
+con15b_chp_bp_relation(n,chp_bp,h)..
+         G_L(n,chp_bp,h) =E= sigma(chp_bp) * Q(n,chp_bp,h)
+;
+
+con15c_chp_pl_lb(n,chp_pl,h)..
+         G_L(n,chp_pl,h) =G= sigma(chp_pl) * Q(n,chp_pl,h)
+;
+
+con15d_chp_pl_ub(n,chp_pl,h)..
+         G_L(n,chp_pl,h) =G= N_Tech(n,chp_pl) - beta(chp_pl) * Q(n,chp_pl,h)
+;
+
+con15e_hop(n,hop,h)..
+         Q(n,hop,h) =L=  N_Tech(n,hop)
+;
+
+con15f_fuel_consumption_chp_bp(n,chp_bp,h)..
+         FC(n,chp_bp,h) =E= (G_L(n,chp_bp,h) + Q(n,chp_bp,h))/eta_T(n,chp_bp)
+;
+
+con15g_fuel_consumption_chp_pl(n,chp_pl,h)..
+         FC(n,chp_pl,h) =E= (G_L(n,chp_pl,h) + beta(chp_pl) * Q(n,chp_pl,h))/eta(n,chp_pl)
+;
+
+con15h_DH_STO_SoC(n,h)..
+         H_DH_STO_LEV(n,h) =E=  eta_heat_stat_DH(n) * H_DH_STO_LEV(n,h--1) + H_DH_STO_IN(n,h) - H_DH_STO_OUT(n,h)
+;
+
+con15i_DH_STO_level_cap(n,h)..
+         H_DH_STO_LEV(n,h) =L=  N_DH_STO_E(n)
+;
+
+con15j_DH_STO_IN_cap(n,h)..
+         H_DH_STO_IN(n,h) =L= N_DH_STO_C(n)
+;
+
+con15k_DH_STO_OUT_cap(n,h)..
+         H_DH_STO_OUT(n,h) =L= N_DH_STO_C(n)
+;
+
+con15a_dh_linkage
+con15b_chp_bp_relation
+con15c_chp_pl_lb
+con15d_chp_pl_ub
+con15e_hop
+con15f_fuel_consumption_chp_bp
+con15g_fuel_consumption_chp_pl
+con15h_DH_STO_SoC
+con15i_DH_STO_level_cap
+con15j_DH_STO_IN_cap
+con15k_DH_STO_OUT_cap
+
+
+
+
+
+
+
 
 
 
@@ -1395,6 +1495,21 @@ $offtext
 con14g_sets_minin
 con14p_hp_minin
 con14s_storage_elec_minin
+$ontext
+$offtext
+
+%DH%$ontext
+con15a_dh_linkage
+con15b_chp_bp_relation
+con15c_chp_pl_lb
+con15d_chp_pl_ub
+con15e_hop
+con15f_fuel_consumption_chp_bp
+con15g_fuel_consumption_chp_pl
+con15h_DH_STO_SoC
+con15i_DH_STO_level_cap
+con15j_DH_STO_IN_cap
+con15k_DH_STO_OUT_cap
 $ontext
 $offtext
 /;

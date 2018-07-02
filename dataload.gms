@@ -20,6 +20,8 @@ $offtext
 Sets
 tech                     Generation technologies
  dis(tech)               Dispatchable generation technologies
+*** CHP noch zu prüfen, ob nicht auch in dispatchable
+ chp(tech)               CHP generation technologies
  nondis(tech)            Nondispatchable generation technologies
  con(tech)               Conventional generation technologies
  res(tech)               Renewable generation technologies
@@ -299,14 +301,15 @@ c_i_ntc          Investment for net transfer capacity in Euro per MW and km
 phi_mean_reserves_call_y         Hourly mean of share reserves called per year in [0 1]
 phi_mean_reserves_call           Hourly mean of share reserves called in [0 1]
 
-theta_dir        Dummy equal to 1 if building type ch has direct heating type ch
-theta_sets       Dummy equal to 1 if building type ch has SETS heating type ch
-theta_hp         Dummy equal to 1 if building type ch has heat pump heating type ch
+theta_dir        Dummy equal to 1 if building type bu has direct heating type ch
+theta_sets       Dummy equal to 1 if building type bu has SETS heating type ch
+theta_hp         Dummy equal to 1 if building type bu has heat pump heating type ch
 theta_elec
 theta_fossil
+theta_dh         Dummy equal to 1 if building type bu has heat pump heating type ch
 
 *theta_hye        Dummy equal to 1 if building type ch has hybrid electric heating type ch
-theta_storage    Dummy equal to 1 if building type ch has storage heating type ch
+theta_storage    Dummy equal to 1 if building type bu has storage heating type ch
 
 
 
@@ -470,7 +473,7 @@ $load headers_time_dhw d_dhw_upload nets_profile
 ;
 
 
-*$stop
+
 
 ***************  ASSIGNMENTS  **************************************************
 
@@ -731,6 +734,8 @@ theta_hp(n,bu,ch)$sum( (heat_storage,heat_elec,heat_fossil,headers_heat), heat_d
 
 theta_elec(n,bu,ch)$sum( (heat_storage,heat_hp,heat_fossil,headers_heat), heat_data_upload(n,bu,ch,heat_storage,heat_hp,'yes',heat_fossil,headers_heat) AND phi_heat_type(n,bu,ch)) = 1;
 theta_fossil(n,bu,ch)$sum( (heat_storage,heat_hp,heat_elec,headers_heat), heat_data_upload(n,bu,ch,heat_storage,heat_hp,heat_elec,'yes',headers_heat) AND phi_heat_type(n,bu,ch)) = 1;
+*** noch zu prüfen
+theta_dh(n,bu,'dh') = 1;
 
 
 

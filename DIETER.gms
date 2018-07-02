@@ -1,5 +1,5 @@
-test change
-test change 2
+*test change
+*test change 2
 ********************************************************************************
 $ontext
 The Dispatch and Investment Evaluation Tool with Endogenous Renewables (DIETER).
@@ -36,7 +36,8 @@ $setglobal reserves_exogenous ""
 
 $setglobal prosumage ""
 
-$setglobal heat ""
+$setglobal heat "*"
+$setglobal DH "*"
 $setglobal HEAT_NIGHT ""
 
 $setglobal EV ""
@@ -58,7 +59,7 @@ $setglobal loop_over_renewable_share ""
 
 * Set star to run test variant with each second hour
 * FEATURE DOES NOT WORK WITH HEAT VERSION
-$setglobal second_hour "*"
+$setglobal second_hour ""
 
 * Set star for no crossover to speed up calculation time by skipping crossover in LP solver
 $setglobal no_crossover ""
@@ -620,8 +621,9 @@ G_INFES          .level          .lev_G_INFES
 ;
 
 *$stop
-solve DIETER using lp min Z scenario dict;
-
+solve DIETER using lp min Z;
+*** scenario dict;
+$stop
 * Reporting
 $include report.gms
 
