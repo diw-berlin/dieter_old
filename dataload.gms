@@ -22,6 +22,10 @@ tech                     Generation technologies
  dis(tech)               Dispatchable generation technologies
 *** CHP noch zu prüfen, ob nicht auch in dispatchable
  chp(tech)               CHP generation technologies
+  chp_bp(tech)            CHP back-pressure turbine technologies
+  chp_pl(tech)            CHP technologies with power loss such as extraction-condensation turbines and OCGT with heat recovery boiler
+ hop(tech)               heat only plant in DH
+ p2h_dh(tech)            power-to-heat technologies in DH
  nondis(tech)            Nondispatchable generation technologies
  con(tech)               Conventional generation technologies
  res(tech)               Renewable generation technologies
@@ -277,6 +281,13 @@ pen_heat_fuel            Penalty term for non-electric fuel usage for hybrid hea
 area_floor
 theta_night
 
+***** District Heating *****
+
+dh_tl(n)                 District heating transmission loss factor in [0 1]
+sigma(n,tech)            CHP power-over-heat-ration [-]
+beta(n,tech)             CHP power loss factor [-]
+eta_T(n,tech)            CHP maximum total fuel efficiency for power and heat generation [-]
+eta_heat_stat_DH(n)      Static efficiency for district heating storage in [0 1]
 
 
 ***************  DERIVED PARAMETERS  *******************************************
@@ -493,6 +504,11 @@ nondis(tech)$sum( (n,tech_res_con,headers_tech), technology_data_upload(n,tech,t
 
 con(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'con',tech_dispatch,headers_tech)) = yes;
 res(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'res',tech_dispatch,headers_tech)) = yes;
+chp(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'chp',tech_dispatch,headers_tech)) = yes;
+chp_bp(tech)$( not sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'chp',tech_dispatch,'beta')) and sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'chp',tech_dispatch,'eta_T')) and not sameas(tech,'OCGT_chp'))  = yes;
+chp_pl(tech)$( (sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'chp',tech_dispatch,'beta')) and sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'chp',tech_dispatch,'eta_T'))) or sameas(tech,'OCGT_chp'))  = yes;
+hop(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'hop',tech_dispatch,headers_tech)) = yes;
+p2h_dh(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'p2h_dh',tech_dispatch,headers_tech)) = yes;
 
 reserves_up(reserves)$sum( (n,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves), reserves_data_upload(n,reserves,'up',reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)) = yes;
 reserves_do(reserves)$sum( (n,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves), reserves_data_upload(n,reserves,'do',reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)) = yes;
@@ -689,6 +705,13 @@ temp_source(n,bu,'hp_gs_elec',h) = heat_data(n,bu,'hp_gs_elec','temperature_sour
 pen_heat_fuel(n,bu,ch) = heat_data(n,bu,ch,'penalty_non-electric_heat_supply') ;
 
 area_floor(n,bu,ch) = heat_data(n,bu,ch,'area_floor') ;
+
+*--- Distrcit Heating ---*
+dh_tl(n)         = 0.12;
+sigma(n,tech)     = sum( tech_dispatch, technology_data_upload(n,tech,'chp',tech_dispatch,'sigma'));
+eta_T(n,tech)     = sum( tech_dispatch, technology_data_upload(n,tech,'chp',tech_dispatch,'eta_T'));
+beta(n,tech)    = sum( tech_dispatch, technology_data_upload(n,tech,'chp',tech_dispatch,'beta'));
+eta_heat_stat_DH(n) = 0.9;
 
 
 

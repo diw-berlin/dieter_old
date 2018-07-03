@@ -168,7 +168,7 @@ $include dataload.gms
 *************************************
 
 Set
-features /dsm, ev, reserves, prosumage, rsvr_outflow, heat/
+features /dsm, ev, reserves, prosumage, rsvr_outflow, heat, DH/
 ;
 
 %GER_only%$include feat_node.gms
@@ -195,6 +195,10 @@ $offtext
 rsvr_outflow     0
 %heat%$ontext
 heat             1
+$ontext
+$offtext
+%DH%$ontext
+DH               1
 $ontext
 $offtext
 ;
