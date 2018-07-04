@@ -21,6 +21,7 @@ Sets
 tech                     Generation technologies
  dis(tech)               Dispatchable generation technologies
 *** CHP noch zu prüfen, ob nicht auch in dispatchable
+ dh_tech(tech)
  chp(tech)               CHP generation technologies
   chp_bp(tech)            CHP back-pressure turbine technologies
   chp_pl(tech)            CHP technologies with power loss such as extraction-condensation turbines and OCGT with heat recovery boiler
@@ -30,6 +31,7 @@ tech                     Generation technologies
  con(tech)               Conventional generation technologies
  res(tech)               Renewable generation technologies
 sto                      Storage technologies
+ hs_dh(sto)
 rsvr                     Reservoir technologies
 dsm                      DSM technologies
  dsm_shift(dsm)          DSM load shifting technologies
@@ -84,9 +86,6 @@ headers_heat                     Heat data - upload headers
 headers_time_heat                Heat data - upload headers time data
 headers_time_dhw
 ;
-
-
-
 
 ***************  PARAMETERS  ***************************************************
 
@@ -282,7 +281,6 @@ area_floor
 theta_night
 
 ***** District Heating *****
-
 dh_tl(n)                 District heating transmission loss factor in [0 1]
 sigma(n,tech)            CHP power-over-heat-ration [-]
 beta(n,tech)             CHP power loss factor [-]
@@ -510,6 +508,11 @@ chp_pl(tech)$( (sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,te
 hop(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'hop',tech_dispatch,headers_tech)) = yes;
 p2h_dh(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'p2h_dh',tech_dispatch,headers_tech)) = yes;
 
+dh_tech(chp) = yes;
+dh_tech(hop) = yes;
+dh_tech(p2h_dh) = yes;
+
+
 reserves_up(reserves)$sum( (n,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves), reserves_data_upload(n,reserves,'up',reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)) = yes;
 reserves_do(reserves)$sum( (n,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves), reserves_data_upload(n,reserves,'do',reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)) = yes;
 
@@ -572,6 +575,7 @@ interest_rate(n,sto) = storage_data(n,sto,'interest_rate');
 m_sto_e(n,sto) = storage_data(n,sto,'max_energy');
 m_sto_p(n,sto) = storage_data(n,sto,'max_power');
 
+hs_dh('HS_DH')=yes;
 
 *--- Reservoir technologies ---*
 c_m_rsvr(n,rsvr) = reservoir_data(n,rsvr,'mc');
@@ -707,6 +711,9 @@ pen_heat_fuel(n,bu,ch) = heat_data(n,bu,ch,'penalty_non-electric_heat_supply') ;
 area_floor(n,bu,ch) = heat_data(n,bu,ch,'area_floor') ;
 
 *--- Distrcit Heating ---*
+c_up(n,chp) =technology_data(n,chp,'load change costs up') ;
+c_do(n,chp) = technology_data(n,chp,'load change costs down') ;
+
 dh_tl(n)         = 0.12;
 sigma(n,tech)     = sum( tech_dispatch, technology_data_upload(n,tech,'chp',tech_dispatch,'sigma'));
 eta_T(n,tech)     = sum( tech_dispatch, technology_data_upload(n,tech,'chp',tech_dispatch,'eta_T'));

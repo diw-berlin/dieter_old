@@ -114,11 +114,11 @@ H_STO_IN_DH(n,bu,ch,h)           District Heating: storage inflow from district 
 Q(n,tech,h)                      District Heating: heat generation in MW
 FC(n,tech,h)                     fuel consumption of CHP technologies
 H_DH_P2H_IN(n,tech,h)            District Heating: power-to-heat input in MW
-H_DH_STO_IN(n,h)                 District Heating: storage inflow in MW
-H_DH_STO_OUT(n,h)                District Heating: storage outflow in MW
-H_DH_STO_LEV(n,h)                District Heating: storage level in MWh
-N_DH_STO_E(n)                    DH storage technology built - Energy in MWh
-N_DH_STO_C(n)                    DH storage loading and discharging capacity built - Capacity in MW
+*H_DH_STO_IN(n,h)                 District Heating: storage inflow in MW
+*H_DH_STO_OUT(n,h)                District Heating: storage outflow in MW
+*H_DH_STO_LEV(n,h)                District Heating: storage level in MWh
+*N_DH_STO_E(n)                    DH storage technology built - Energy in MWh
+*N_DH_STO_C(n)                    DH storage loading and discharging capacity built - Capacity in MW
 ;
 
 
@@ -279,6 +279,7 @@ con15h_DH_STO_SoC
 con15i_DH_STO_level_cap
 con15j_DH_STO_IN_cap
 con15k_DH_STO_OUT_cap
+con15l_DH_P2H_cap
 ;
 
 
@@ -297,14 +298,6 @@ obj..
                  + sum( (dis,h,n) , c_do(n,dis)*G_DO(n,dis,h) )
                  + sum( (nondis,h,n) , c_cu(n,nondis)*CU(n,nondis,h) )
                  + sum( (sto,h,n) , c_m_sto(n,sto) * ( STO_OUT(n,sto,h) + STO_IN(n,sto,h) ) )
-%DH%$ontext
-                 + sum( (chp_bp,h,n) , eta(n,chp_bp) * c_m(n,chp_bp)*FC(n,chp_bp,h) )
-                 + sum( (chp_pl,h,n) , eta(n,chp_pl) * c_m(n,chp_pl)*FC(n,chp_pl,h) )
-                 + sum( (hop,h,n) ,                    c_m(n,hop)*Q(n,hop,h) )
-                 + sum( (chp,h,n)$(ord(h)>1) , c_up(n,chp)*G_UP(n,chp,h) )
-                 + sum( (chp,h,n) , c_do(n,chp)*G_DO(n,chp,h) )
-$ontext
-$offtext
 %DSM%$ontext
                  + sum( (dsm_curt,h,n) , c_m_dsm_cu(n,dsm_curt)*DSM_CU(n,dsm_curt,h) )
                  + sum( (dsm_shift,h,n) , c_m_dsm_shift(n,dsm_shift) * DSM_UP_DEMAND(n,dsm_shift,h) )
@@ -317,7 +310,7 @@ $offtext
 $ontext
 $offtext
                  + sum( (n,tech) , c_i(n,tech)*N_TECH(n,tech) )
-                 + sum( (tech,n) , c_fix(n,tech)*N_TECH(n,tech) )
+                 + sum( (n,tech) , c_fix(n,tech)*N_TECH(n,tech) )
                  + sum( (sto,n) , c_i_sto_e(n,sto)*N_STO_E(n,sto) )
                  + sum( (sto,n) , c_fix_sto(n,sto)/2*(N_STO_P(n,sto)+N_STO_E(n,sto)) )
                  + sum( (sto,n) , c_i_sto_p(n,sto)*N_STO_P(n,sto) )
@@ -351,11 +344,11 @@ $offtext
                  + sum( (res,n) , c_i(n,res)*N_RES_PRO(n,res) )
                  + sum( (res,n) , c_fix(n,res)*N_RES_PRO(n,res) )
 
-                 + sum( (sto,n) , c_i_sto_e(n,sto)*N_STO_E_PRO(n,sto) )
-                 + sum( (sto,n) , c_fix_sto(n,sto)/2*(N_STO_P_PRO(n,sto) + N_STO_E_PRO(n,sto)) )
-                 + sum( (sto,n) , c_i_sto_p(n,sto)*N_STO_P_PRO(n,sto) )
+                 + sum( (sto,n)$(not hs_dh(sto)) , c_i_sto_e(n,sto)*N_STO_E_PRO(n,sto) )
+                 + sum( (sto,n)$(not hs_dh(sto)) , c_fix_sto(n,sto)/2*(N_STO_P_PRO(n,sto) + N_STO_E_PRO(n,sto)) )
+                 + sum( (sto,n)$(not hs_dh(sto)) , c_i_sto_p(n,sto)*N_STO_P_PRO(n,sto) )
 
-                 + sum( (sto,h,n) , c_m_sto(n,sto) * ( STO_OUT_PRO2PRO(n,sto,h) + STO_OUT_M2PRO(n,sto,h) + STO_OUT_PRO2M(n,sto,h) + STO_OUT_M2M(n,sto,h) + sum( res , STO_IN_PRO2PRO(n,res,sto,h) + STO_IN_PRO2M(n,res,sto,h)) + STO_OUT_PRO2M(n,sto,h) + STO_OUT_M2M(n,sto,h) ) )
+                 + sum( (sto,h,n)$(not hs_dh(sto)) , c_m_sto(n,sto) * ( STO_OUT_PRO2PRO(n,sto,h) + STO_OUT_M2PRO(n,sto,h) + STO_OUT_PRO2M(n,sto,h) + STO_OUT_M2M(n,sto,h) + sum( res , STO_IN_PRO2PRO(n,res,sto,h) + STO_IN_PRO2M(n,res,sto,h)) + STO_OUT_PRO2M(n,sto,h) + STO_OUT_M2M(n,sto,h) ) )
 $ontext
 $offtext
                  + sum( l , c_i_ntc(l) * NTC(l)*dist(l) )
@@ -369,6 +362,18 @@ $offtext
 $ontext
 $offtext
                  + sum( (n,h) , c_infes * G_INFES(n,h) )
+%DH%$ontext
+                 + sum( (chp_bp,h,n) , eta(n,chp_bp) * c_m(n,chp_bp)*FC(n,chp_bp,h) )
+                 + sum( (chp_pl,h,n) , eta(n,chp_pl) * c_m(n,chp_pl)*FC(n,chp_pl,h) )
+                 + sum( (hop,h,n) ,                    c_m(n,hop)*Q(n,hop,h) )
+                 + sum( (chp,h,n)$(ord(h)>1) , c_up(n,chp)*G_UP(n,chp,h) )
+                 + sum( (chp,h,n) , c_do(n,chp)*G_DO(n,chp,h) )
+
+                 + sum( n , c_i_sto_e(n,'HS_DH')*N_STO_E(n,'HS_DH') )
+                 + sum( n , c_fix_sto(n,'HS_DH')/2*(N_STO_P(n,'HS_DH')+N_STO_E(n,'HS_DH')) )
+                 + sum( n , c_i_sto_p(n,'HS_DH')*N_STO_P(n,'HS_DH') )
+$ontext
+$offtext
 ;
 
 * ---------------------------------------------------------------------------- *
@@ -377,7 +382,7 @@ $offtext
 
 * Energy balance
 con1a_bal(n,hh)..
-         ( 1 - phi_pro_load(n) ) * d(n,hh) + sum( sto , STO_IN(n,sto,hh) )
+         ( 1 - phi_pro_load(n) ) * d(n,hh) + sum( sto$(not hs_dh(sto)) , STO_IN(n,sto,hh) )
 %DSM%$ontext
          + sum( dsm_shift , DSM_UP_DEMAND(n,dsm_shift,hh) )
 $ontext
@@ -388,8 +393,8 @@ $ontext
 $offtext
 %prosumage%$ontext
          + G_MARKET_M2PRO(n,hh)
-         + sum( sto , STO_IN_M2PRO(n,sto,hh))
-         + sum( sto , STO_IN_M2M(n,sto,hh))
+         + sum( sto$(not hs_dh(sto)) , STO_IN_M2PRO(n,sto,hh))
+         + sum( sto$(not hs_dh(sto)) , STO_IN_M2M(n,sto,hh))
 $ontext
 $offtext
 %heat%$ontext
@@ -400,13 +405,12 @@ $offtext
 $ontext
 $offtext
 %DH%$ontext
-*** hier DH Strombedarf einfügen
         + sum(p2h_dh, H_DH_P2H_IN(n,p2h_dh,hh) )
 
 $ontext
 $offtext
          =E=
-         sum( dis , G_L(n,dis,hh)) + sum( nondis , G_RES(n,nondis,hh)) + sum( sto , STO_OUT(n,sto,hh) )
+         sum( dis , G_L(n,dis,hh)) + sum( nondis$(not dh_tech(nondis)) , G_RES(n,nondis,hh)) + sum( sto$(not hs_dh(sto)) , STO_OUT(n,sto,hh) )
          + sum( rsvr , RSVR_OUT(n,rsvr,hh))
 %GER_only%       + sum( l , inc(l,n) * F(l,hh))
 %reserves%$ontext
@@ -428,8 +432,8 @@ $ontext
 $offtext
 %prosumage%$ontext
          + sum( res , G_MARKET_PRO2M(n,res,hh) )
-         + sum( sto , STO_OUT_PRO2M(n,sto,hh))
-         + sum( sto , STO_OUT_M2M(n,sto,hh))
+         + sum( sto$(not hs_dh(sto)) , STO_OUT_PRO2M(n,sto,hh))
+         + sum( sto$(not hs_dh(sto)) , STO_OUT_M2M(n,sto,hh))
 $ontext
 $offtext
          + G_INFES(n,hh)
@@ -480,7 +484,7 @@ con3d_flex_reserves_nonspin(reserves_nonspin,dis,h,n)..
         =L= grad_per_min(n,dis) * reserves_reaction(n,reserves_nonspin) * N_TECH(n,dis)
 ;
 
-con3e_maxprod_res(nondis,h,n)..
+con3e_maxprod_res(nondis,h,n)$(not dh_tech(nondis))..
         G_RES(n,nondis,h) + CU(n,nondis,h)
 %reserves%$ontext
         + sum( reserves_up , RP_NONDIS(n,reserves_up,nondis,h))
@@ -498,11 +502,11 @@ con3f_minprod_res(nondis,h,n)..
 ***** Storage constraints *****
 * ---------------------------------------------------------------------------- *
 
-con4a_stolev_start(sto,h,n)$(ord(h) = 1)..
+con4a_stolev_start(sto,h,n)$(ord(h) = 1 and not hs_dh(sto))..
         STO_L(n,sto,h) =E= phi_sto_ini(n,sto) * N_STO_E(n,sto) + STO_IN(n,sto,h)*(1+eta_sto(n,sto))/2 - STO_OUT(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con4b_stolev(sto,h,n)$((ord(h)>1) AND m_sto_e(n,sto))..
+con4b_stolev(sto,h,n)$((ord(h)>1) AND m_sto_e(n,sto) and not hs_dh(sto))..
          STO_L(n,sto,h) =E= STO_L(n,sto,h-1) + STO_IN(n,sto,h)*(1+eta_sto(n,sto))/2 - STO_OUT(n,sto,h)/(1+eta_sto(n,sto))*2
 %reserves%$ontext
          + sum( reserves_do , phi_reserves_call(n,reserves_do,h) * ( RP_STO_IN(n,reserves_do,sto,h)*(1+eta_sto(n,sto))/2 + RP_STO_OUT(n,reserves_do,sto,h)/(1+eta_sto(n,sto))*2 ))
@@ -511,11 +515,11 @@ $ontext
 $offtext
 ;
 
-con4c_stolev_max(sto,h,n)..
+con4c_stolev_max(sto,h,n)$(not hs_dh(sto))..
         STO_L(n,sto,h) =L= N_STO_E(n,sto)
 ;
 
-con4d_maxin_sto(sto,h,n)..
+con4d_maxin_sto(sto,h,n)$(not hs_dh(sto))..
         STO_IN(n,sto,h)
 %reserves%$ontext
         + sum( reserves_do , RP_STO_IN(n,reserves_do,sto,h))
@@ -524,7 +528,7 @@ $offtext
         =L= N_STO_P(n,sto)
 ;
 
-con4e_maxout_sto(sto,h,n)..
+con4e_maxout_sto(sto,h,n)$(not hs_dh(sto))..
         STO_OUT(n,sto,h)
 %reserves%$ontext
         + sum( reserves_up , RP_STO_OUT(n,reserves_up,sto,h))
@@ -533,17 +537,17 @@ $offtext
         =L= N_STO_P(n,sto)
 ;
 
-con4f_resrv_sto(sto,h,n)$m_sto_e(n,sto)..
+con4f_resrv_sto(sto,h,n)$(m_sto_e(n,sto) and not hs_dh(sto))..
         sum( reserves_up , RP_STO_IN(n,reserves_up,sto,h))
         =L= STO_IN(n,sto,h)
 ;
 
-con4g_resrv_sto(sto,h,n)$m_sto_e(n,sto)..
+con4g_resrv_sto(sto,h,n)$(m_sto_e(n,sto) and not hs_dh(sto))..
         sum( reserves_do , RP_STO_OUT(n,reserves_do,sto,h))
         =L= STO_OUT(n,sto,h)
 ;
 
-con4h_maxout_lev(sto,h,n)$m_sto_e(n,sto)..
+con4h_maxout_lev(sto,h,n)$(m_sto_e(n,sto) and not hs_dh(sto))..
         ( STO_OUT(n,sto,h)
 %reserves%$ontext
         + sum( reserves_up , RP_STO_OUT(n,reserves_up,sto,h))
@@ -553,7 +557,7 @@ $offtext
         =L= STO_L(n,sto,h-1)
 ;
 
-con4i_maxin_lev(sto,h,n)..
+con4i_maxin_lev(sto,h,n)$(not hs_dh(sto))..
         ( STO_IN(n,sto,h)
 %reserves%$ontext
         + sum( reserves_do , RP_STO_IN(n,reserves_do,sto,h))
@@ -563,11 +567,11 @@ $offtext
         =L= N_STO_E(n,sto) - STO_L(n,sto,h-1)
 ;
 
-con4j_ending(sto,h,n)$(ord(h) = card(h) AND m_sto_e(n,sto))..
+con4j_ending(sto,h,n)$(ord(h) = card(h) AND m_sto_e(n,sto) and not hs_dh(sto))..
          STO_L(n,sto,h) =E= phi_sto_ini(n,sto) * N_STO_E(n,sto)
 ;
 
-con4k_PHS_EtoP(sto,n)$m_sto_e(n,sto)..
+con4k_PHS_EtoP(sto,n)$(m_sto_e(n,sto) and not hs_dh(sto))..
         N_STO_E(n,sto) =L= etop_max(n,sto) * N_STO_P(n,sto)
 ;
 
@@ -576,19 +580,19 @@ con4k_PHS_EtoP(sto,n)$m_sto_e(n,sto)..
 * ---------------------------------------------------------------------------- *
 
 con5a_minRES(n)..
-sum( h , G_L(n,'bio',h) + sum( nondis , G_RES(n,nondis,h)) + sum( rsvr , RSVR_OUT(n,rsvr,h))
+sum( h , G_L(n,'bio',h) + sum( nondis$(not dh_tech(nondis)) , G_RES(n,nondis,h)) + sum( rsvr , RSVR_OUT(n,rsvr,h))
 %reserves%$ontext
          - sum( reserves_do , (sum( nondis , RP_NONDIS(n,reserves_do,nondis,h)) + sum( rsvr , RP_RSVR(n,reserves_do,rsvr,h))) * phi_reserves_call(n,reserves_do,h))
          + sum( reserves_up , (sum( nondis , RP_NONDIS(n,reserves_up,nondis,h)) + sum( rsvr , RP_RSVR(n,reserves_up,rsvr,h))) * phi_reserves_call(n,reserves_up,h))
 $ontext
 $offtext
 %prosumage%$ontext
-         + sum( sto , STO_OUT_PRO2PRO(n,sto,h) + STO_OUT_PRO2M(n,sto,h)) + sum( res , G_MARKET_PRO2M(n,res,h) + G_RES_PRO(n,res,h))
+         + sum( sto$(not hs_dh(sto)) , STO_OUT_PRO2PRO(n,sto,h) + STO_OUT_PRO2M(n,sto,h)) + sum( res , G_MARKET_PRO2M(n,res,h) + G_RES_PRO(n,res,h))
 $ontext
 $offtext
 )
         =G= phi_min_res * phi_min_res_exog(n) * sum( h ,
-         sum( dis , G_L(n,dis,h)) + sum( nondis , G_RES(n,nondis,h)) + sum( rsvr , RSVR_OUT(n,rsvr,h))
+         sum( dis , G_L(n,dis,h)) + sum( nondis$(not dh_tech(nondis)) , G_RES(n,nondis,h)) + sum( rsvr , RSVR_OUT(n,rsvr,h))
 %reserves%$ontext
          - sum( reserves_do , (sum( nondis , RP_NONDIS(n,reserves_do,nondis,h)) + sum( rsvr , RP_RSVR(n,reserves_do,rsvr,h))) * phi_reserves_call(n,reserves_do,h))
          + sum( reserves_up , (sum( nondis , RP_NONDIS(n,reserves_up,nondis,h)) + sum( rsvr , RP_RSVR(n,reserves_up,rsvr,h))) * phi_reserves_call(n,reserves_up,h))
@@ -603,7 +607,7 @@ $offtext
 
 *sum( h , d(n,h) + sum( (sto) , STO_IN(n,sto,h) - STO_OUT(n,sto,h) )
 *%prosumage%$ontext
-*         + sum( sto , sum( res , STO_IN_PRO2PRO(n,res,sto,h) + STO_IN_PRO2M(n,res,sto,h)) + STO_IN_M2PRO(n,sto,h) + STO_IN_M2M(n,sto,h) - STO_OUT_PRO2PRO(n,sto,h) - STO_OUT_PRO2M(n,sto,h) - STO_OUT_M2PRO(n,sto,h) - STO_OUT_M2M(n,sto,h) )
+*         + sum( sto$(not hs_dh(sto)) , sum( res , STO_IN_PRO2PRO(n,res,sto,h) + STO_IN_PRO2M(n,res,sto,h)) + STO_IN_M2PRO(n,sto,h) + STO_IN_M2M(n,sto,h) - STO_OUT_PRO2PRO(n,sto,h) - STO_OUT_PRO2M(n,sto,h) - STO_OUT_M2PRO(n,sto,h) - STO_OUT_M2M(n,sto,h) )
 *$ontext
 *$offtext
 *%DSM%$ontext
@@ -956,82 +960,82 @@ con10l_ev_exog(ev,h,n)$feat_node('ev',n)..
 con11a_pro_distrib(res,h,n)..
          phi_res(n,res,h) * N_RES_PRO(n,res)
          =E=
-         CU_PRO(n,res,h) + G_MARKET_PRO2M(n,res,h) + G_RES_PRO(n,res,h) + sum( sto , STO_IN_PRO2PRO(n,res,sto,h) + STO_IN_PRO2M(n,res,sto,h) )
+         CU_PRO(n,res,h) + G_MARKET_PRO2M(n,res,h) + G_RES_PRO(n,res,h) + sum( sto$(not hs_dh(sto)) , STO_IN_PRO2PRO(n,res,sto,h) + STO_IN_PRO2M(n,res,sto,h) )
 ;
 
 con11b_pro_balance(h,n)..
          phi_pro_load(n) * d(n,h)
          =E=
-         sum( res , G_RES_PRO(n,res,h)) + sum( sto , STO_OUT_PRO2PRO(n,sto,h) + STO_OUT_M2PRO(n,sto,h) ) + G_MARKET_M2PRO(n,h)
+         sum( res , G_RES_PRO(n,res,h)) + sum( sto$(not hs_dh(sto)) , STO_OUT_PRO2PRO(n,sto,h) + STO_OUT_M2PRO(n,sto,h) ) + G_MARKET_M2PRO(n,h)
 ;
 
 con11c_pro_selfcon(n)..
-         sum( (res,h) , G_RES_PRO(n,res,h) ) + sum( (h,sto) , STO_OUT_PRO2PRO(n,sto,h) )
+         sum( (res,h) , G_RES_PRO(n,res,h) ) + sum( (h,sto)$(not hs_dh(sto)) , STO_OUT_PRO2PRO(n,sto,h) )
          =G=
          phi_pro_self * sum( h , phi_pro_load(n) * d(n,h))
 ;
 
-con11d_pro_stolev_PRO2PRO(sto,h,n)$(ord(h) > 1 )..
+con11d_pro_stolev_PRO2PRO(sto,h,n)$(ord(h) > 1 and not hs_dh(sto))..
          STO_L_PRO2PRO(n,sto,h) =E= STO_L_PRO2PRO(n,sto,h-1) + sum( res , STO_IN_PRO2PRO(n,res,sto,h))*(1+eta_sto(n,sto))/2 - STO_OUT_PRO2PRO(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con11e_pro_stolev_PRO2M(sto,h,n)$(ord(h) > 1)..
+con11e_pro_stolev_PRO2M(sto,h,n)$(ord(h) > 1 and not hs_dh(sto))..
          STO_L_PRO2M(n,sto,h) =E= STO_L_PRO2M(n,sto,h-1) + sum( res , STO_IN_PRO2M(n,res,sto,h))*(1+eta_sto(n,sto))/2 - STO_OUT_PRO2M(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con11f_pro_stolev_M2PRO(sto,h,n)$(ord(h) > 1)..
+con11f_pro_stolev_M2PRO(sto,h,n)$(ord(h) > 1 and not hs_dh(sto))..
          STO_L_M2PRO(n,sto,h) =E= STO_L_M2PRO(n,sto,h-1) + STO_IN_M2PRO(n,sto,h)*(1+eta_sto(n,sto))/2 - STO_OUT_M2PRO(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con11g_pro_stolev_M2M(sto,h,n)$(ord(h) > 1)..
+con11g_pro_stolev_M2M(sto,h,n)$(ord(h) > 1 and not hs_dh(sto))..
          STO_L_M2M(n,sto,h) =E= STO_L_M2M(n,sto,h-1) + STO_IN_M2M(n,sto,h)*(1+eta_sto(n,sto))/2 - STO_OUT_M2M(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con11h_1_pro_stolev_start_PRO2PRO(sto,h,n)$(ord(h) = 1)..
+con11h_1_pro_stolev_start_PRO2PRO(sto,h,n)$(ord(h) = 1 and not hs_dh(sto))..
         STO_L_PRO2PRO(n,sto,h) =E= 0.25 * phi_sto_pro_ini(n,sto) * N_STO_E_PRO(n,sto) + sum( res , STO_IN_PRO2PRO(n,res,sto,'h1'))*(1+eta_sto(n,sto))/2 - STO_OUT_PRO2PRO(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con11h_2_pro_stolev_start_PRO2M(sto,h,n)$(ord(h) = 1)..
+con11h_2_pro_stolev_start_PRO2M(sto,h,n)$(ord(h) = 1 and not hs_dh(sto))..
         STO_L_PRO2M(n,sto,h) =E= 0.25 * phi_sto_pro_ini(n,sto) * N_STO_E_PRO(n,sto) + sum( res , STO_IN_PRO2M(n,res,sto,'h1'))*(1+eta_sto(n,sto))/2 - STO_OUT_PRO2M(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con11h_3_pro_stolev_start_M2PRO(sto,h,n)$(ord(h) = 1)..
+con11h_3_pro_stolev_start_M2PRO(sto,h,n)$(ord(h) = 1 and not hs_dh(sto))..
         STO_L_M2PRO(n,sto,h) =E= 0.25 * phi_sto_pro_ini(n,sto) * N_STO_E_PRO(n,sto) + STO_IN_M2PRO(n,sto,h)*(1+eta_sto(n,sto))/2 - STO_OUT_M2PRO(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con11h_4_pro_stolev_start_M2M(sto,h,n)$(ord(h) = 1)..
+con11h_4_pro_stolev_start_M2M(sto,h,n)$(ord(h) = 1 and not hs_dh(sto))..
         STO_L_M2M(n,sto,h) =E= 0.25 * phi_sto_pro_ini(n,sto) * N_STO_E_PRO(n,sto) + STO_IN_M2M(n,sto,'h1')*(1+eta_sto(n,sto))/2 - STO_OUT_M2M(n,sto,h)/(1+eta_sto(n,sto))*2
 ;
 
-con11i_pro_stolev(sto,h,n)$(ord(h)>1)..
+con11i_pro_stolev(sto,h,n)$(ord(h)>1 and not hs_dh(sto))..
          STO_L_PRO(n,sto,h) =E=   STO_L_PRO2PRO(n,sto,h) +  STO_L_PRO2M(n,sto,h) + STO_L_M2PRO(n,sto,h) + STO_L_M2M(n,sto,h)
 ;
 
-con11j_pro_stolev_max(sto,h,n)..
+con11j_pro_stolev_max(sto,h,n)$(not hs_dh(sto))..
         STO_L_PRO(n,sto,h) =L= N_STO_E_PRO(n,sto)
 ;
 
-con11k_pro_maxin_sto(sto,h,n)..
+con11k_pro_maxin_sto(sto,h,n)$(not hs_dh(sto))..
         sum( res , STO_IN_PRO2PRO(n,res,sto,h) + STO_IN_PRO2M(n,res,sto,h) ) + STO_IN_M2PRO(n,sto,h) + STO_IN_M2M(n,sto,h)
         =L= N_STO_P_PRO(n,sto)
 ;
 
-con11l_pro_maxout_sto(sto,h,n)..
+con11l_pro_maxout_sto(sto,h,n)$(not hs_dh(sto))..
         STO_OUT_PRO2PRO(n,sto,h) + STO_OUT_PRO2M(n,sto,h) + STO_OUT_M2PRO(n,sto,h) + STO_OUT_M2M(n,sto,h)
         =L= N_STO_P_PRO(n,sto)
 ;
 
-con11m_pro_maxout_lev(sto,h,n)..
+con11m_pro_maxout_lev(sto,h,n)$(not hs_dh(sto))..
         ( STO_OUT_PRO2PRO(n,sto,h) + STO_OUT_M2PRO(n,sto,h) + STO_OUT_PRO2M(n,sto,h) + STO_OUT_M2M(n,sto,h) ) / (1+eta_sto(n,sto))*2
         =L= STO_L_PRO(n,sto,h-1)
 ;
 
-con11n_pro_maxin_lev(sto,h,n)..
+con11n_pro_maxin_lev(sto,h,n)$(not hs_dh(sto))..
         ( sum( res , STO_IN_PRO2PRO(n,res,sto,h) + STO_IN_PRO2M(n,res,sto,h) ) + STO_IN_M2PRO(n,sto,h) + STO_IN_M2M(n,sto,h) ) * (1+eta_sto(n,sto))/2
         =L= N_STO_E_PRO(n,sto) - STO_L_PRO(n,sto,h-1)
 ;
 
-con11o_pro_ending(sto,h,n)$(ord(h) = card(h))..
+con11o_pro_ending(sto,h,n)$(ord(h) = card(h) and not hs_dh(sto))..
          STO_L_PRO(n,sto,h) =E= phi_sto_pro_ini(n,sto) * N_STO_E_PRO(n,sto)
 ;
 
@@ -1266,7 +1270,7 @@ con14v_storage_maxlev(n,bu,hst,h)$(feat_node('heat',n) AND theta_storage(n,bu,hs
 * DISTRICT HEATING
 
 con15a_dh_linkage(n,h)$feat_node('dh',n)..
-         sum(bu$theta_dh(n,bu,'dh'), H_STO_IN_DH(n,bu,'dh',h)) + H_DH_STO_IN(n,h) =E= (sum(chp, Q(n,chp,h)) + sum(hop, Q(n,hop,h)) + H_DH_STO_OUT(n,h) + sum(p2h_dh, eta(n,p2h_dh) * H_DH_P2H_IN(n,p2h_dh,h))) * (1-dh_tl(n))
+         sum(bu$theta_dh(n,bu,'dh'), H_STO_IN_DH(n,bu,'dh',h)) + STO_IN(n,'HS_DH',h) =E= (sum(chp, Q(n,chp,h)) + sum(hop, Q(n,hop,h)) + STO_OUT(n,'HS_DH',h) + sum(p2h_dh, eta(n,p2h_dh) * H_DH_P2H_IN(n,p2h_dh,h))) * (1-dh_tl(n))
 ;
 
 con15b_chp_bp_relation(n,chp_bp,h)..
@@ -1294,19 +1298,23 @@ con15g_fuel_consumption_chp_pl(n,chp_pl,h)..
 ;
 
 con15h_DH_STO_SoC(n,h)..
-         H_DH_STO_LEV(n,h) =E=  eta_heat_stat_DH(n) * H_DH_STO_LEV(n,h--1) + H_DH_STO_IN(n,h) - H_DH_STO_OUT(n,h)
+         STO_L(n,'HS_DH',h) =E=  eta_heat_stat_DH(n) * STO_L(n,'HS_DH',h--1) + STO_IN(n,'HS_DH',h) - STO_OUT(n,'HS_DH',h)
 ;
 
 con15i_DH_STO_level_cap(n,h)..
-         H_DH_STO_LEV(n,h) =L=  N_DH_STO_E(n)
+         STO_L(n,'HS_DH',h) =L=  N_STO_E(n,'HS_DH')
 ;
 
 con15j_DH_STO_IN_cap(n,h)..
-         H_DH_STO_IN(n,h) =L= N_DH_STO_C(n)
+         STO_IN(n,'HS_DH',h) =L= N_STO_P(n,'HS_DH')
 ;
 
 con15k_DH_STO_OUT_cap(n,h)..
-         H_DH_STO_OUT(n,h) =L= N_DH_STO_C(n)
+         STO_OUT(n,'HS_DH',h) =L= N_STO_P(n,'HS_DH')
+;
+
+con15l_DH_P2H_cap(n,p2h_dh,h)..
+         H_DH_P2H_IN(n,p2h_dh,h) =L= N_Tech(n,p2h_dh)
 ;
 
 
@@ -1495,17 +1503,18 @@ $ontext
 $offtext
 
 %DH%$ontext
-*con15a_dh_linkage
-*con15b_chp_bp_relation
-*con15c_chp_pl_lb
-*con15d_chp_pl_ub
-*con15e_hop
-*con15f_fuel_consumption_chp_bp
-*con15g_fuel_consumption_chp_pl
-*con15h_DH_STO_SoC
-*con15i_DH_STO_level_cap
-*con15j_DH_STO_IN_cap
-*con15k_DH_STO_OUT_cap
+con15a_dh_linkage
+con15b_chp_bp_relation
+con15c_chp_pl_lb
+con15d_chp_pl_ub
+con15e_hop
+con15f_fuel_consumption_chp_bp
+con15g_fuel_consumption_chp_pl
+con15h_DH_STO_SoC
+con15i_DH_STO_level_cap
+con15j_DH_STO_IN_cap
+con15k_DH_STO_OUT_cap
+con15l_DH_P2H_cap
 $ontext
 $offtext
 /;

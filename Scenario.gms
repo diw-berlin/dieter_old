@@ -37,14 +37,14 @@ m_exog_ntc(l) = topology_data(l,'fixed_capacities_ntc') ;
 *** Dispatch model
 $ontext
 N_TECH.lo(n,tech) = m_exog_p(n,tech) ;
-N_STO_P.lo(n,sto) = m_exog_sto_p(n,sto) ;
-N_STO_E.lo(n,sto) = m_exog_sto_e(n,sto) ;
+N_STO_P.lo(n,sto)$(not hs_dh(sto)) = m_exog_sto_p(n,sto) ;
+N_STO_E.lo(n,sto)$(not hs_dh(sto)) = m_exog_sto_e(n,sto) ;
 N_RSVR_P.lo(n,rsvr) =  m_exog_rsvr_p(n,rsvr) ;
 NTC.lo(l) = m_exog_ntc(l) ;
 
 N_TECH.up(n,tech) = m_exog_p(n,tech) + 0.1 ;
-N_STO_P.up(n,sto) = m_exog_sto_p(n,sto) + 0.1 ;
-N_STO_E.up(n,sto) = m_exog_sto_e(n,sto) + 0.1 ;
+N_STO_P.up(n,sto)$(not hs_dh(sto)) = m_exog_sto_p(n,sto) + 0.1 ;
+N_STO_E.up(n,sto)$(not hs_dh(sto)) = m_exog_sto_e(n,sto) + 0.1 ;
 N_RSVR_P.up(n,rsvr) =  m_exog_rsvr_p(n,rsvr) + 0.1 ;
 NTC.up(l) = m_exog_ntc(l) + 0.1 ;
 
@@ -58,17 +58,17 @@ N_TECH.lo(n,tech) = 0 ;
 N_TECH.lo(n,'wind_on') = m_exog_p(n,'wind_on') ;
 N_TECH.lo(n,'wind_off') = m_exog_p(n,'wind_off') ;
 N_TECH.lo(n,'pv') = m_exog_p(n,'pv') ;
-N_STO_P.lo(n,sto) = m_exog_sto_p(n,sto) ;
-N_STO_E.lo(n,sto) = m_exog_sto_e(n,sto) ;
+N_STO_P.lo(n,sto)$(not hs_dh(sto)) = m_exog_sto_p(n,sto) ;
+N_STO_E.lo(n,sto)$(not hs_dh(sto)) = m_exog_sto_e(n,sto) ;
 N_RSVR_P.lo(n,rsvr) =  m_exog_rsvr_p(n,rsvr) ;
 NTC.lo(l) = m_exog_ntc(l) ;
 
-N_TECH.up(n,tech) = m_exog_p(n,tech) + 0.1 ;
+N_TECH.up(n,tech)$(not dh_tech(tech)) = m_exog_p(n,tech) + 0.1 ;
 N_TECH.up(n,'wind_on') = inf ;
 N_TECH.up(n,'wind_off') = inf ;
 N_TECH.up(n,'pv') = inf ;
-N_STO_P.up(n,sto) = m_exog_sto_p(n,sto) + 0.1 ;
-N_STO_E.up(n,sto) = m_exog_sto_e(n,sto) + 0.1 ;
+N_STO_P.up(n,sto)$(not hs_dh(sto)) = m_exog_sto_p(n,sto) + 0.1 ;
+N_STO_E.up(n,sto)$(not hs_dh(sto)) = m_exog_sto_e(n,sto) + 0.1 ;
 N_STO_P.up(n,'sto1') = inf ;
 N_STO_P.up(n,'sto5') = inf ;
 N_STO_P.up(n,'sto7') = inf ;

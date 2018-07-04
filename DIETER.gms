@@ -137,16 +137,16 @@ reslim = 10000000
 lp = cplex
 mip = cplex
 nlp = conopt
-limrow = 0
-limcol = 0
+limrow = 100000
+limcol = 100000
 ;
 
 options
 dispwidth = 15
-limrow = 0
-limcol = 0
-solprint = off
-sysout = off
+limrow = 100000
+limcol = 100000
+solprint = on
+sysout = on
 ;
 
 
