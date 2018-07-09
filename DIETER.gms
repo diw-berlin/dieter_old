@@ -1,5 +1,4 @@
-*test change
-*test change 2
+
 ********************************************************************************
 $ontext
 The Dispatch and Investment Evaluation Tool with Endogenous Renewables (DIETER).
@@ -137,16 +136,16 @@ reslim = 10000000
 lp = cplex
 mip = cplex
 nlp = conopt
-limrow = 100000
-limcol = 100000
+limrow = 0
+limcol = 0
 ;
 
 options
 dispwidth = 15
-limrow = 100000
-limcol = 100000
-solprint = on
-sysout = on
+limrow = 0
+limcol = 0
+solprint = off
+sysout = off
 ;
 
 
@@ -262,8 +261,6 @@ phi_pro_self = 0 ;
 phi_pro_load(n) = 0 ;
 phi_pro_load(n)$feat_node('prosumage',n) = 0.2 ;
 
-
-*$stop
 
 
 
@@ -624,7 +621,7 @@ G_INFES          .level          .lev_G_INFES
 /
 ;
 
-*$stop
+
 solve DIETER using lp min Z;
 *** scenario dict;
 $stop
