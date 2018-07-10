@@ -279,7 +279,8 @@ con15h_DH_STO_SoC
 con15i_DH_STO_level_cap
 con15j_DH_STO_IN_cap
 con15k_DH_STO_OUT_cap
-con15l_DH_P2H_cap
+con15l_DH_STO_EtoP
+con15m_DH_P2H_cap
 ;
 
 
@@ -581,6 +582,11 @@ con4k_PHS_EtoP(sto,n)$(m_sto_e(n,sto) and not hs_dh(sto))..
 
 con5a_minRES(n)..
 sum( h , G_L(n,'bio',h) + sum( nondis$(not dh_tech(nondis)) , G_RES(n,nondis,h)) + sum( rsvr , RSVR_OUT(n,rsvr,h))
+%DH%$ontext
+        + G_L(n,'bio_bp',h)
+        + G_L(n,'bio_ec',h)
+$ontext
+$offtext
 %reserves%$ontext
          - sum( reserves_do , (sum( nondis , RP_NONDIS(n,reserves_do,nondis,h)) + sum( rsvr , RP_RSVR(n,reserves_do,rsvr,h))) * phi_reserves_call(n,reserves_do,h))
          + sum( reserves_up , (sum( nondis , RP_NONDIS(n,reserves_up,nondis,h)) + sum( rsvr , RP_RSVR(n,reserves_up,rsvr,h))) * phi_reserves_call(n,reserves_up,h))
@@ -1313,11 +1319,13 @@ con15k_DH_STO_OUT_cap(n,h)..
          STO_OUT(n,'HS_DH',h) =L= N_STO_P(n,'HS_DH')
 ;
 
-con15l_DH_P2H_cap(n,p2h_dh,h)..
-         H_DH_P2H_IN(n,p2h_dh,h) =L= N_Tech(n,p2h_dh)
+con15l_DH_STO_EtoP(n)$m_sto_e(n,'HS_DH')..
+        N_STO_E(n,'HS_DH') =L= etop_max(n,'HS_DH') * N_STO_P(n,'HS_DH')
 ;
 
-
+con15m_DH_P2H_cap(n,p2h_dh,h)..
+         H_DH_P2H_IN(n,p2h_dh,h) =L= N_Tech(n,p2h_dh)
+;
 
 
 
@@ -1514,7 +1522,8 @@ con15h_DH_STO_SoC
 con15i_DH_STO_level_cap
 con15j_DH_STO_IN_cap
 con15k_DH_STO_OUT_cap
-con15l_DH_P2H_cap
+con15l_DH_STO_EtoP
+con15m_DH_P2H_cap
 $ontext
 $offtext
 /;
