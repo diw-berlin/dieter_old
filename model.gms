@@ -110,7 +110,8 @@ H_DHW_AUX_ELEC_IN(n,bu,ch,h)     Heating - domestic hot water: electrical energy
 H_DHW_AUX_LEV(n,bu,ch,h)         Heating - domestic hot water: level of auxiliary hot water tank for SETS
 H_DHW_AUX_OUT(n,bu,ch,h)         Heating - domestic hot water: auxiliary DHW provision for SETS
 
-H_STO_IN_DH(n,bu,ch,h)           District Heating: storage inflow from district heating to residential storage technologies in MW
+H_DH(n,bu,ch,h)                  District Heating: supply from district heating to residences in MW
+H_DHW_DH(n,bu,ch,h)              District Heating: supply from district heating to DHW in residences in MW
 Q(n,tech,h)                      District Heating: heat generation in MW
 FC(n,tech,h)                     fuel consumption of CHP technologies
 H_DH_P2H_IN(n,tech,h)            District Heating: power-to-heat input in MW
@@ -1121,11 +1122,19 @@ con13j_min_FLH(n,rsvr)$m_rsvr_e(n,rsvr)..
 con14a_heat_balance(n,bu,ch,h)$feat_node('heat',n)..
          theta_dir(n,bu,ch) * H_DIR(n,bu,ch,h) + theta_sets(n,bu,ch) * H_SETS_OUT(n,bu,ch,h)+ theta_storage(n,bu,ch) * H_STO_OUT(n,bu,ch,h)
          + theta_sets(n,bu,ch) * (1-eta_heat_stat(n,bu,ch)) * H_SETS_LEV(n,bu,ch,h-1)$(theta_sets(n,bu,ch) AND ord(h) > 1)
+%DH%$ontext
+         +  theta_dh(n,bu,ch) * H_DH(n,bu,ch,h)
+$ontext
+$offtext
          =G= dh(n,bu,ch,h)
 ;
 
 con14b_dhw_balance(n,bu,ch,h)$feat_node('heat',n)..
          theta_storage(n,bu,ch) * H_DHW_STO_OUT(n,bu,ch,h) + theta_dir(n,bu,ch) * H_DHW_DIR(n,bu,ch,h) + theta_sets(n,bu,ch) * H_DHW_AUX_OUT(n,bu,ch,h)
+%DH%$ontext
+         +  theta_dh(n,bu,ch) * H_DHW_DH(n,bu,ch,h)
+$ontext
+$offtext
          =E=
          d_dhw(n,bu,ch,h)
 ;
@@ -1252,10 +1261,6 @@ con14t_storage_level(n,bu,hst,h)$(feat_node('heat',n) AND theta_storage(n,bu,hst
          H_STO_LEV(n,bu,hst,h)
          =E=
          eta_heat_stat(n,bu,hst) * H_STO_LEV(n,bu,hst,h-1) + theta_hp(n,bu,hst)*H_STO_IN_HP(n,bu,hst,h) + theta_elec(n,bu,hst)*H_STO_IN_ELECTRIC(n,bu,hst,h) + theta_fossil(n,bu,hst) * H_STO_IN_FOSSIL(n,bu,hst,h)
-%DH%$ontext
-         +  theta_dh(n,bu,hst) * H_STO_IN_DH(n,bu,hst,h)
-$ontext
-$offtext
          - H_STO_OUT(n,bu,hst,h) - H_DHW_STO_OUT(n,bu,hst,h)
 ;
 
@@ -1270,7 +1275,7 @@ con14v_storage_maxlev(n,bu,hst,h)$(feat_node('heat',n) AND theta_storage(n,bu,hs
 * DISTRICT HEATING
 
 con15a_dh_linkage(n,h)$feat_node('dh',n)..
-         sum(bu$theta_dh(n,bu,'dh'), H_STO_IN_DH(n,bu,'dh',h)) + STO_IN(n,'HS_DH',h) =E= (sum(chp, Q(n,chp,h)) + sum(hop, Q(n,hop,h)) + STO_OUT(n,'HS_DH',h) + sum(p2h_dh, eta(n,p2h_dh) * H_DH_P2H_IN(n,p2h_dh,h))) * (1-dh_tl(n))
+         sum(bu$theta_dh(n,bu,'dh'), H_DH(n,bu,'dh',h) + H_DHW_DH(n,bu,'dh',h)) + STO_IN(n,'HS_DH',h) =E= (sum(chp, Q(n,chp,h)) + sum(hop, Q(n,hop,h)) + STO_OUT(n,'HS_DH',h) + sum(p2h_dh, eta(n,p2h_dh) * H_DH_P2H_IN(n,p2h_dh,h))) * (1-dh_tl(n))
 ;
 
 con15b_chp_bp_relation(n,chp_bp,h)..
@@ -1316,8 +1321,6 @@ con15k_DH_STO_OUT_cap(n,h)..
 con15l_DH_P2H_cap(n,p2h_dh,h)..
          H_DH_P2H_IN(n,p2h_dh,h) =L= N_Tech(n,p2h_dh)
 ;
-
-
 
 
 
