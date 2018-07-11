@@ -162,6 +162,7 @@ con4k_PHS_EtoP            Maximum E to P ratio for PHS
 * Minimum restrictions for renewables and biomass
 con5a_minRES             Minimum yearly renewables requirement
 con5b_max_energy         Maximum yearly biomass energy
+con5bb_max_energy        Additional constraint when considering biomass CHP in DH
 
 * DSM conditions: Load curtailment
 con6a_DSMcurt_duration_max       Maximum curtailment energy budget per time
@@ -276,12 +277,17 @@ con15d_chp_pl_ub
 con15e_hop
 con15f_fuel_consumption_chp_bp
 con15g_fuel_consumption_chp_pl
-con15h_DH_STO_SoC
-con15i_DH_STO_level_cap
-con15j_DH_STO_IN_cap
-con15k_DH_STO_OUT_cap
-con15l_DH_STO_EtoP
-con15m_DH_P2H_cap
+con15h_loadlevel_CHP
+con15i_loadlevelstart_CHP
+con15j_DH_STO_SoC
+con15k_DH_STO_level_cap
+con15l_DH_STO_IN_cap
+con15m_DH_STO_OUT_cap
+con15n_DH_STO_EtoP
+con15o_DH_P2H_cap
+
+con15p_minprod_dispatchable
+con15q_flex_reserves_spin
 ;
 
 
@@ -295,9 +301,9 @@ con15m_DH_P2H_cap
 
 obj..
          Z =E=
-                 sum( (dis,h,n) , c_m(n,dis)*G_L(n,dis,h) )
-                 + sum( (dis,h,n)$(ord(h)>1) , c_up(n,dis)*G_UP(n,dis,h) )
-                 + sum( (dis,h,n) , c_do(n,dis)*G_DO(n,dis,h) )
+                 sum( (dis,h,n)$(not chp(dis)) , c_m(n,dis)*G_L(n,dis,h) )
+                 + sum( (dis,h,n)$(ord(h)>1 and not chp(dis)) , c_up(n,dis)*G_UP(n,dis,h) )
+                 + sum( (dis,h,n)$(not chp(dis)) , c_do(n,dis)*G_DO(n,dis,h) )
                  + sum( (nondis,h,n) , c_cu(n,nondis)*CU(n,nondis,h) )
                  + sum( (sto,h,n) , c_m_sto(n,sto) * ( STO_OUT(n,sto,h) + STO_IN(n,sto,h) ) )
 %DSM%$ontext
@@ -313,9 +319,9 @@ $ontext
 $offtext
                  + sum( (n,tech) , c_i(n,tech)*N_TECH(n,tech) )
                  + sum( (n,tech) , c_fix(n,tech)*N_TECH(n,tech) )
-                 + sum( (sto,n) , c_i_sto_e(n,sto)*N_STO_E(n,sto) )
-                 + sum( (sto,n) , c_fix_sto(n,sto)/2*(N_STO_P(n,sto)+N_STO_E(n,sto)) )
-                 + sum( (sto,n) , c_i_sto_p(n,sto)*N_STO_P(n,sto) )
+                 + sum( (sto,n)$(not hs_dh(sto)) , c_i_sto_e(n,sto)*N_STO_E(n,sto) )
+                 + sum( (sto,n)$(not hs_dh(sto)) , c_fix_sto(n,sto)/2*(N_STO_P(n,sto)+N_STO_E(n,sto)) )
+                 + sum( (sto,n)$(not hs_dh(sto)) , c_i_sto_p(n,sto)*N_STO_P(n,sto) )
 %DSM%$ontext
                  + sum( (dsm_curt,n) , c_i_dsm_cu(n,dsm_curt)*N_DSM_CU(n,dsm_curt) )
                  + sum( (dsm_curt,n) , c_fix_dsm_cu(n,dsm_curt)*N_DSM_CU(n,dsm_curt) )
@@ -324,8 +330,8 @@ $offtext
 $ontext
 $offtext
 %reserves%$ontext
-                 + sum( (reserves_up,sto,h,n) , phi_reserves_call(n,reserves_up,h) * c_m_sto(n,sto) * (RP_STO_OUT(n,reserves_up,sto,h) - RP_STO_IN(n,reserves_up,sto,h)) )
-                 - sum( (reserves_do,sto,h,n) , phi_reserves_call(n,reserves_do,h) * c_m_sto(n,sto) * (RP_STO_OUT(n,reserves_do,sto,h) - RP_STO_IN(n,reserves_do,sto,h)) )
+                 + sum( (reserves_up,sto,h,n)$(not hs_dh(sto)) , phi_reserves_call(n,reserves_up,h) * c_m_sto(n,sto) * (RP_STO_OUT(n,reserves_up,sto,h) - RP_STO_IN(n,reserves_up,sto,h)) )
+                 - sum( (reserves_do,sto,h,n)$(not hs_dh(sto)) , phi_reserves_call(n,reserves_do,h) * c_m_sto(n,sto) * (RP_STO_OUT(n,reserves_do,sto,h) - RP_STO_IN(n,reserves_do,sto,h)) )
                  + sum( (reserves_up,rsvr,h,n) , RP_RSVR(n,reserves_up,rsvr,h) * phi_reserves_call(n,reserves_up,h) * c_m_rsvr(n,rsvr) )
                  - sum( (reserves_do,rsvr,h,n) , RP_RSVR(n,reserves_do,rsvr,h) * phi_reserves_call(n,reserves_do,h) * c_m_rsvr(n,rsvr) )
 $ontext
@@ -412,7 +418,7 @@ $offtext
 $ontext
 $offtext
          =E=
-         sum( dis , G_L(n,dis,hh)) + sum( nondis$(not dh_tech(nondis)) , G_RES(n,nondis,hh)) + sum( sto$(not hs_dh(sto)) , STO_OUT(n,sto,hh) )
+         sum( dis$(not chp(dis)) , G_L(n,dis,hh)) + sum( nondis$(not dh_tech(nondis)) , G_RES(n,nondis,hh)) + sum( sto$(not hs_dh(sto)) , STO_OUT(n,sto,hh) )
          + sum( rsvr , RSVR_OUT(n,rsvr,hh))
 %GER_only%       + sum( l , inc(l,n) * F(l,hh))
 %reserves%$ontext
@@ -420,6 +426,12 @@ $offtext
         + sum( dis ,
           sum( reserves_do ,  RP_DIS(n,reserves_do,dis,hh) * phi_reserves_call(n,reserves_do,hh))
         - sum( reserves_up ,  RP_DIS(n,reserves_up,dis,hh) * phi_reserves_call(n,reserves_up,hh))
+         )
+$ontext
+$offtext
+%DH_reserves%$ontext
+        + sum( p2h_dh ,
+          sum( reserves_do ,  RP_DIS(n,reserves_do,p2h_dh,hh) * phi_reserves_call(n,reserves_do,hh))
          )
 $ontext
 $offtext
@@ -439,13 +451,17 @@ $offtext
 $ontext
 $offtext
          + G_INFES(n,hh)
+%DH%$ontext
+         + sum( chp , G_L(n,chp,hh))
+$ontext
+$offtext
 ;
 
-con2a_loadlevel(dis,h,n)$(ord(h) > 1 AND m_p(n,dis))..
+con2a_loadlevel(dis,h,n)$(ord(h) > 1 AND m_p(n,dis) and not chp(dis))..
         G_L(n,dis,h) =E= G_L(n,dis,h-1) + G_UP(n,dis,h) - G_DO(n,dis,h)
 ;
 
-con2b_loadlevelstart(dis,h,n)$(ord(h) = 1 AND m_p(n,dis))..
+con2b_loadlevelstart(dis,h,n)$(ord(h) = 1 AND m_p(n,dis) and not chp(dis))..
          G_L(n,dis,h) =E= G_UP(n,dis,h)
 ;
 
@@ -495,7 +511,7 @@ $offtext
         =E= phi_res(n,nondis,h) * N_TECH(n,nondis)
 ;
 
-con3f_minprod_res(nondis,h,n)..
+con3f_minprod_res(nondis,h,n)$(not dh_tech(nondis))..
         sum( reserves_do , RP_NONDIS(n,reserves_do,nondis,h))
         =L= G_RES(n,nondis,h)
 ;
@@ -664,7 +680,11 @@ $offtext
 *;
 
 con5b_max_energy(n,dis)$m_e(n,dis)..
-         sum( h , G_L(n,dis,h) ) =L= m_e(n,dis)
+         sum( h$(not bio(dis)) , G_L(n,dis,h) ) + sum( h , G_L(n,dis,h)$sameas(dis,'bio') ) =L= m_e(n,dis)$(not bio(dis))
+;
+
+con5bb_max_energy(n)$m_e(n,'bio')..
+         sum( (bio,h) , G_L(n,bio,h)$sameas(bio,'bio') + FC(n,bio,h)$(sameas(bio,'bio_bp') or sameas(bio,'bio_ec')))  =L= m_e(n,'bio')
 ;
 
 * ---------------------------------------------------------------------------- *
@@ -738,7 +758,7 @@ con8a_max_I_power(n,tech)..
          N_TECH(n,tech) =L= m_p(n,tech)
 ;
 
-con8b_max_I_sto_e(sto,n)..
+con8b_max_I_sto_e(sto,n) ..
          N_STO_E(n,sto) =L= m_sto_e(n,sto)
 ;
 
@@ -786,7 +806,7 @@ con9a_reserve_prov_endogenous(reserves_nonprim,h,n)..
         sum( dis , RP_DIS(n,reserves_nonprim,dis,h))
         + sum(nondis, RP_NONDIS(n,reserves_nonprim,nondis,h))
         + sum(rsvr, RP_RSVR(n,reserves_nonprim,rsvr,h))
-        + sum(sto, RP_STO_IN(n,reserves_nonprim,sto,h) + RP_STO_OUT(n,reserves_nonprim,sto,h))
+        + sum(sto$(not hs_dh(sto)), RP_STO_IN(n,reserves_nonprim,sto,h) + RP_STO_OUT(n,reserves_nonprim,sto,h))
 %DSM%$ontext
         + sum(dsm_curt, RP_DSM_CU(n,reserves_nonprim,dsm_curt,h))
         + sum(dsm_shift , RP_DSM_SHIFT(n,reserves_nonprim,dsm_shift,h) )
@@ -818,7 +838,7 @@ con9a_reserve_prov_exogenous(reserves_nonprim,h,n)..
         sum( dis , RP_DIS(n,reserves_nonprim,dis,h))
         + sum(nondis, RP_NONDIS(n,reserves_nonprim,nondis,h))
         + sum(rsvr, RP_RSVR(n,reserves_nonprim,rsvr,h))
-        + sum(sto, RP_STO_IN(n,reserves_nonprim,sto,h) + RP_STO_OUT(n,reserves_nonprim,sto,h))
+        + sum(sto$(not hs_dh(sto)), RP_STO_IN(n,reserves_nonprim,sto,h) + RP_STO_OUT(n,reserves_nonprim,sto,h))
 %DSM%$ontext
         + sum(dsm_curt, RP_DSM_CU(n,reserves_nonprim,dsm_curt,h))
         + sum(dsm_shift , RP_DSM_SHIFT(n,reserves_nonprim,dsm_shift,h) )
@@ -842,7 +862,7 @@ con9b_reserve_prov_PR_endogenous(reserves_prim,h,n)..
         sum(dis, RP_DIS(n,reserves_prim,dis,h))
         + sum(nondis, RP_NONDIS(n,reserves_prim,nondis,h))
         + sum(rsvr, RP_RSVR(n,reserves_prim,rsvr,h))
-        + sum(sto, RP_STO_IN(n,reserves_prim,sto,h) + RP_STO_OUT(n,reserves_prim,sto,h) )
+        + sum(sto$(not hs_dh(sto)), RP_STO_IN(n,reserves_prim,sto,h) + RP_STO_OUT(n,reserves_prim,sto,h) )
 %EV%$ontext
 %EV_EXOG%   + sum(ev, RP_EV_G2V(n,reserves_prim,ev,h) + RP_EV_V2G(n,reserves_prim,ev,h) )
 $ontext
@@ -862,7 +882,7 @@ con9b_reserve_prov_PR_exogenous(reserves_prim,h,n)..
         sum(dis, RP_DIS(n,reserves_prim,dis,h))
         + sum(nondis, RP_NONDIS(n,reserves_prim,nondis,h))
         + sum(rsvr, RP_RSVR(n,reserves_prim,rsvr,h))
-        + sum(sto, RP_STO_IN(n,reserves_prim,sto,h) + RP_STO_OUT(n,reserves_prim,sto,h) )
+        + sum(sto$(not hs_dh(sto)), RP_STO_IN(n,reserves_prim,sto,h) + RP_STO_OUT(n,reserves_prim,sto,h) )
 %EV%$ontext
 %EV_EXOG%   + sum(ev, RP_EV_G2V(n,reserves_prim,ev,h) + RP_EV_V2G(n,reserves_prim,ev,h) )
 $ontext
@@ -1308,32 +1328,56 @@ con15g_fuel_consumption_chp_pl(n,chp_pl,h)..
          FC(n,chp_pl,h) =E= (G_L(n,chp_pl,h) + beta(n,chp_pl) * Q(n,chp_pl,h))/eta(n,chp_pl)
 ;
 
-con15h_DH_STO_SoC(n,h)..
+con15h_loadlevel_CHP(chp,h,n)$(ord(h) > 1 AND m_p(n,chp))..
+        G_L(n,chp,h) =E= G_L(n,chp,h-1) + G_UP(n,chp,h) - G_DO(n,chp,h)
+;
+
+con15i_loadlevelstart_CHP(chp,h,n)$(ord(h) = 1 AND m_p(n,chp))..
+         G_L(n,chp,h) =E= G_UP(n,chp,h)
+;
+
+con15j_DH_STO_SoC(n,h)..
          STO_L(n,'HS_DH',h) =E=  eta_heat_stat_DH(n) * STO_L(n,'HS_DH',h--1) + STO_IN(n,'HS_DH',h) - STO_OUT(n,'HS_DH',h)
 ;
 
-con15i_DH_STO_level_cap(n,h)..
+con15k_DH_STO_level_cap(n,h)..
          STO_L(n,'HS_DH',h) =L=  N_STO_E(n,'HS_DH')
 ;
 
-con15j_DH_STO_IN_cap(n,h)..
+con15l_DH_STO_IN_cap(n,h)..
          STO_IN(n,'HS_DH',h) =L= N_STO_P(n,'HS_DH')
 ;
 
-con15k_DH_STO_OUT_cap(n,h)..
+con15m_DH_STO_OUT_cap(n,h)..
          STO_OUT(n,'HS_DH',h) =L= N_STO_P(n,'HS_DH')
 ;
 
-con15l_DH_STO_EtoP(n)$m_sto_e(n,'HS_DH')..
+con15n_DH_STO_EtoP(n)$m_sto_e(n,'HS_DH')..
         N_STO_E(n,'HS_DH') =L= etop_max(n,'HS_DH') * N_STO_P(n,'HS_DH')
 ;
 
-con15m_DH_P2H_cap(n,p2h_dh,h)..
-         H_DH_P2H_IN(n,p2h_dh,h) =L= N_Tech(n,p2h_dh)
+
+*** Bzgl. reserves von DH P2H hochgradig unsicher und unbedingt gemeinsame Überprüfung erforderlich
+con15o_DH_P2H_cap(n,p2h_dh,h)..
+         H_DH_P2H_IN(n,p2h_dh,h)
+%DH_reserves%$ontext
+        + sum( reserves_do ,  RP_DIS(n,reserves_do,p2h_dh,h) * phi_reserves_call(n,reserves_do,h))
+$ontext
+$offtext
+         =L= N_Tech(n,p2h_dh)
 ;
 
+con15p_minprod_dispatchable(p2h_dh,h,n)..
+        sum( reserves_do , RP_DIS(n,reserves_do,p2h_dh,h))
+        =L= H_DH_P2H_IN(n,p2h_dh,h)
+        - sum( reserves_do ,  RP_DIS(n,reserves_do,p2h_dh,h) * phi_reserves_call(n,reserves_do,h))
+;
 
-
+con15q_flex_reserves_spin(reserves_spin,p2h_dh,h,n)..
+        RP_DIS(n,reserves_spin,p2h_dh,h)
+        =L= grad_per_min(n,p2h_dh) * reserves_reaction(n,reserves_spin) * ( H_DH_P2H_IN(n,p2h_dh,h)
+        - sum( reserves_do ,  RP_DIS(n,reserves_do,p2h_dh,h) * phi_reserves_call(n,reserves_do,h)) )
+;
 
 
 
@@ -1380,6 +1424,10 @@ con4k_PHS_EtoP
 
 con5a_minRES
 con5b_max_energy
+%DH%$ontext
+con5bb_max_energy
+$ontext
+$offtext
 
 %DSM%$ontext
 con6a_DSMcurt_duration_max
@@ -1521,12 +1569,19 @@ con15d_chp_pl_ub
 con15e_hop
 con15f_fuel_consumption_chp_bp
 con15g_fuel_consumption_chp_pl
-con15h_DH_STO_SoC
-con15i_DH_STO_level_cap
-con15j_DH_STO_IN_cap
-con15k_DH_STO_OUT_cap
-con15l_DH_STO_EtoP
-con15m_DH_P2H_cap
+con15h_loadlevel_CHP
+con15i_loadlevelstart_CHP
+con15j_DH_STO_SoC
+con15k_DH_STO_level_cap
+con15l_DH_STO_IN_cap
+con15m_DH_STO_OUT_cap
+con15n_DH_STO_EtoP
+con15o_DH_P2H_cap
+$ontext
+$offtext
+%DH_reserves%$ontext
+con15p_minprod_dispatchable
+con15q_flex_reserves_spin
 $ontext
 $offtext
 /;

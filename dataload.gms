@@ -27,6 +27,8 @@ tech                     Generation technologies
   chp_pl(tech)            CHP technologies with power loss such as extraction-condensation turbines and OCGT with heat recovery boiler
  hop(tech)               heat only plant in DH
  p2h_dh(tech)            power-to-heat technologies in DH
+ ho(tech)                DH heating only technologies
+ bio(tech)
  nondis(tech)            Nondispatchable generation technologies
  con(tech)               Conventional generation technologies
  res(tech)               Renewable generation technologies
@@ -499,6 +501,7 @@ alias (nondis,nondisnondis) ;
 ***** Derived sets *****
 dis(tech)$sum( (n,tech_res_con,headers_tech), technology_data_upload(n,tech,tech_res_con,'dis',headers_tech)) = yes;
 nondis(tech)$sum( (n,tech_res_con,headers_tech), technology_data_upload(n,tech,tech_res_con,'nondis',headers_tech)) = yes;
+ho(tech)$sum( (n,tech_res_con,headers_tech), technology_data_upload(n,tech,tech_res_con,'ho',headers_tech)) = yes;
 
 con(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'con',tech_dispatch,headers_tech)) = yes;
 res(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,'res',tech_dispatch,headers_tech)) = yes;
@@ -511,6 +514,16 @@ p2h_dh(tech)$sum( (n,tech_dispatch,headers_tech), technology_data_upload(n,tech,
 dh_tech(chp) = yes;
 dh_tech(hop) = yes;
 dh_tech(p2h_dh) = yes;
+
+dis(chp) = no;
+bio(tech) = no;
+%DH%$ontext
+dis(chp) = yes;
+bio('bio') = yes;
+bio('bio_bp') = yes;
+bio('bio_ec') = yes;
+$ontext
+$offtext
 
 
 reserves_up(reserves)$sum( (n,reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves), reserves_data_upload(n,reserves,'up',reserves_spin_nonspin,reserves_prim_nonprim,headers_reserves)) = yes;

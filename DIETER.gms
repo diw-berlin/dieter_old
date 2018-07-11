@@ -31,12 +31,13 @@ $setglobal GER_only "*"
 $setglobal DSM ""
 
 $setglobal reserves_endogenous ""
-$setglobal reserves_exogenous ""
+$setglobal reserves_exogenous "*"
 
 $setglobal prosumage ""
 
 $setglobal heat "*"
 $setglobal DH "*"
+$setglobal DH_reserves "*"
 $setglobal HEAT_NIGHT ""
 
 $setglobal EV ""
@@ -136,16 +137,16 @@ reslim = 10000000
 lp = cplex
 mip = cplex
 nlp = conopt
-limrow = 0
-limcol = 0
+limrow = 100000
+limcol = 100000
 ;
 
 options
 dispwidth = 15
-limrow = 0
-limcol = 0
-solprint = off
-sysout = off
+limrow = 100000
+limcol = 100000
+solprint = on
+sysout = on
 ;
 
 

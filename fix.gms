@@ -98,9 +98,9 @@ $offtext
 %heat%$ontext
 %reserves%$ontext
 RP_HP.fx(n,reserves_prim,bu,hp,h) = 0 ;
-RP_SETS.fx(n,reserves_prim,bu,ch,h) = 0 ;
-RP_SETS_AUX.fx(n,reserves_prim,bu,ch,h) = 0 ;
-RP_H_ELEC.fx(n,reserves_prim,bu,ch,h) = 0 ;
+RP_SETS.fx(n,reserves_prim,bu,ch,h)$(not sameas(ch,'dh')) = 0 ;
+RP_SETS_AUX.fx(n,reserves_prim,bu,ch,h)$(not sameas(ch,'dh')) = 0 ;
+RP_H_ELEC.fx(n,reserves_prim,bu,ch,h)$(not sameas(ch,'dh')) = 0 ;
 $ontext
 $offtext
 
